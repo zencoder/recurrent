@@ -3,6 +3,50 @@ require 'spec_helper'
 module Recurrent
   describe Task do
 
+    describe "create_rule_from_frequency" do
+      context "when the frequency is in years" do
+        it "should create a yearly rule" do
+          Task.create_rule_from_frequency(2.years).class.should == IceCube::YearlyRule
+        end
+      end
+
+      context "when the frequency is in months" do
+        it "should create a yearly rule" do
+          Task.create_rule_from_frequency(3.months).class.should == IceCube::MonthlyRule
+        end
+      end
+
+      context "when the frequency is in weeks" do
+        it "should create a weekly rule" do
+          Task.create_rule_from_frequency(2.weeks).class.should == IceCube::WeeklyRule
+        end
+      end
+
+      context "when the frequency is in days" do
+        it "should create a daily rule" do
+          Task.create_rule_from_frequency(3.days).class.should == IceCube::DailyRule
+        end
+      end
+
+      context "when the frequency is in hours" do
+        it "should create an hourly rule" do
+          Task.create_rule_from_frequency(6.hours).class.should == IceCube::HourlyRule
+        end
+      end
+
+      context "when the frequency is in minutes" do
+        it "should create a minutely rule" do
+          Task.create_rule_from_frequency(10.minutes).class.should == IceCube::MinutelyRule
+        end
+      end
+
+      context "when the frequency is in seconds" do
+        it "should create a secondly rule" do
+          Task.create_rule_from_frequency(30.seconds).class.should == IceCube::SecondlyRule
+        end
+      end
+    end
+
     describe "create_schedule_from_frequency" do
       context "when frequency is an IceCube Rule" do
         subject do
