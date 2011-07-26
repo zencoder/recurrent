@@ -4,7 +4,7 @@ module Recurrent
 
     def initialize(options={})
       @name = options[:name]
-      @schedule = self.class.create_schedule_from_frequency(options[:duration], options[:start_time])
+      @schedule = self.class.create_schedule_from_frequency(options[:schedule], options[:start_time])
       @action = options[:action]
     end
 
