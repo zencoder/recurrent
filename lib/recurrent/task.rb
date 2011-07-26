@@ -20,7 +20,11 @@ module Recurrent
       when /month/
         IceCube::Rule.monthly(frequency / 1.month)
       when /day/
-        IceCube::Rule.daily(frequency / 1.day)
+        if ((frequency / 1.week).is_a? Integer) && ((frequency / 1.week) != 0)
+          IceCube::Rule.weekly(frequency / 1.week)
+        else
+          IceCube::Rule.daily(frequency / 1.day)
+        end
       else
         if ((frequency / 1.hour).is_a? Integer) && ((frequency / 1.hour) != 0)
           IceCube::Rule.hourly(frequency / 1.hour)
