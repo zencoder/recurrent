@@ -8,7 +8,7 @@ module Recurrent
       @action = options[:action]
     end
 
-    def next_occurence
+    def next_occurrence
       return @next_occurrence if @next_occurrence && (@next_occurrence > Time.now)
       @next_occurrence = schedule.next_occurrence
     end
