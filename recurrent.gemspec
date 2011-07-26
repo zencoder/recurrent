@@ -5,7 +5,7 @@ $:.unshift lib unless $:.include?(lib)
 require 'recurrent/version'
 
 Gem::Specification.new do |s|
-  s.name         = "overseer"
+  s.name         = "recurrent"
   s.version      = Recurrent::GEM_VERSION
   s.platform     = Gem::Platform::RUBY
   s.authors      = ["Adam Kittelson"]
