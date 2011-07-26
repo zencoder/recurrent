@@ -34,8 +34,14 @@ module Recurrent
     end
 
     def self.create_schedule_from_frequency(frequency, start_time=nil)
-      rule = create_rule_from_frequency(frequency)
-      start_time ||= derive_start_time(rule.frequency_in_seconds)
+      if frequency.is_a? IceCube::Rule
+        rule = frequency
+        frequency_in_seconds = rule.frequency_in_seconds
+      else
+        rule = create_rule_from_frequency(frequency)
+        frequency_in_seconds = frequency
+      end
+      start_time ||= derive_start_time(frequency_in_seconds)
       schedule = IceCube::Schedule.new(start_time)
       schedule.add_recurrence_rule rule
       schedule
