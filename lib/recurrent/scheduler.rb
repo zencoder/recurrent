@@ -29,7 +29,7 @@ module Recurrent
         puts execute_at.to_s(:seconds)
         tasks_to_execute.each do |task|
           Thread.new do
-            task[:task].call
+            task.action.call
           end
         end
 
