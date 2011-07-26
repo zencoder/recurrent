@@ -48,6 +48,8 @@ module Recurrent
           current_time.beginning_of_year
         when IceCube::MonthlyRule
           current_time.beginning_of_month
+        when IceCube::WeeklyRule
+          current_time.beginning_of_week
         when IceCube::DailyRule
           current_time.beginning_of_day
         when IceCube::HourlyRule
@@ -66,6 +68,8 @@ module Recurrent
           current_time.change(:min => 0, :sec => 0, :usec => 0)
         elsif frequency < 1.day
           current_time.beginning_of_day
+        elsif frequency < 1.week
+          current_time.beginning_of_week
         elsif frequency < 1.month
           current_time.beginning_of_month
         elsif frequency < 1.year

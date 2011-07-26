@@ -13,9 +13,11 @@ Gem::Specification.new do |s|
   s.description  = "Task scheduler that doesn't need to bootstrap your Rails environment every time it executes a task the way running a rake task via cron does."
 
   s.add_dependency "ice_cube", "0.6.8"
+  s.add_dependency "activesupport"
+  s.add_dependency "i18n"
   s.add_development_dependency "rspec"
   s.add_development_dependency "autotest"
-
+  s.add_development_dependency "timecop"
   s.files        = `git ls-files`.split("\n")
   s.test_files   = `git ls-files -- {test,spec,features}/*`.split("\n")
   s.require_path = ["lib"]
