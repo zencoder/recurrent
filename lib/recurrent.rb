@@ -4,6 +4,7 @@ begin
 rescue LoadError
   require 'active_support'
 end
+require 'recurrent/ice_cube_extensions'
 
 require 'recurrent/scheduler'
 require 'recurrent/task'

@@ -34,47 +34,27 @@ module Recurrent
     end
 
     def self.create_schedule_from_frequency(frequency, start_time=nil)
-      schedule = IceCube::Schedule.new(start_time || derive_start_time(frequency))
       rule = create_rule_from_frequency(frequency)
+      start_time ||= derive_start_time(rule.frequency_in_seconds)
+      schedule = IceCube::Schedule.new(start_time)
       schedule.add_recurrence_rule rule
       schedule
     end
 
     def self.derive_start_time(frequency)
       current_time = Time.now
-      if frequency.is_a? IceCube::Rule
-        case frequency
-        when IceCube::YearlyRule
-          current_time.beginning_of_year
-        when IceCube::MonthlyRule
-          current_time.beginning_of_month
-        when IceCube::WeeklyRule
-          current_time.beginning_of_week
-        when IceCube::DailyRule
-          current_time.beginning_of_day
-        when IceCube::HourlyRule
-          current_time.change(:min => 0, :sec => 0, :usec => 0)
-        when IceCube::MinutelyRule
-          current_time.change(:sec => 0, :usec => 0)
-        when IceCube::SecondlyRule
-          current_time.change(:usec => 0)
-        end
-      else
-        if frequency < 1.second
-          current_time.change(:usec => 0)
-        elsif frequency < 1.minute
-          current_time.change(:sec => 0, :usec => 0)
-        elsif frequency < 1.hour
-          current_time.change(:min => 0, :sec => 0, :usec => 0)
-        elsif frequency < 1.day
-          current_time.beginning_of_day
-        elsif frequency < 1.week
-          current_time.beginning_of_week
-        elsif frequency < 1.month
-          current_time.beginning_of_month
-        elsif frequency < 1.year
-          current_time.beginning_of_year
-        end
+      if frequency < 1.minute
+        current_time.change(:sec => 0, :usec => 0)
+      elsif frequency < 1.hour
+        current_time.change(:min => 0, :sec => 0, :usec => 0)
+      elsif frequency < 1.day
+        current_time.beginning_of_day
+      elsif frequency < 1.week
+        current_time.beginning_of_week
+      elsif frequency < 1.month
+        current_time.beginning_of_month
+      elsif frequency < 1.year
+        current_time.beginning_of_year
       end
     end
 
