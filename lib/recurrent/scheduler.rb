@@ -55,7 +55,7 @@ module Recurrent
 
     def tasks_at_time(time)
       tasks.select do |task|
-        task[:schedule].next_occurrence == time
+        task.next_occurrence == time
       end
     end
   end
