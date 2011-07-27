@@ -6,7 +6,7 @@ module Recurrent
     def initialize
       @tasks = []
       @identifier = "host:#{Socket.gethostname} pid:#{Process.pid}" rescue "pid:#{Process.pid}"
-      eval(File.read("#{Rails.root}/config/recurrences.rb"))
+      #eval(File.read("#{Rails.root}/config/recurrences.rb"))
     end
 
     def execute
