@@ -6,7 +6,7 @@ module Recurrent
     def initialize
       @tasks = []
       @identifier = "host:#{Socket.gethostname} pid:#{Process.pid}" rescue "pid:#{Process.pid}"
-      #eval(File.read("#{Rails.root}/config/recurrences.rb"))
+      eval(File.read(Configuration.task_file)) if Configuration.task_file
     end
 
     def execute
@@ -26,7 +26,6 @@ module Recurrent
 
         break if $exit
 
-        puts execute_at.to_s(:seconds)
         tasks_to_execute.each do |task|
           Thread.new do
             task.action.call
@@ -46,7 +45,7 @@ module Recurrent
     def log(message)
       message = "[Recurrent Scheduler: #{@identifier}] - #{message}"
       puts message
-      RAILS_DEFAULT_LOGGER.info(message)
+      Configuration.logger(message)
     end
 
     def next_task_time

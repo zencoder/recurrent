@@ -6,6 +6,7 @@ rescue LoadError
 end
 require 'recurrent/ice_cube_extensions'
 
+require 'recurrent/configuration'
 require 'recurrent/scheduler'
 require 'recurrent/task'
 require 'recurrent/version'
