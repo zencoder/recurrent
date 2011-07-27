@@ -50,7 +50,7 @@ module Recurrent
     end
 
     def next_task_time
-      @tasks.sort_by { |task| task.next_occurrence }.first.next_occurrence
+      @tasks.map { |task| task.next_occurrence }.sort.first
     end
 
     def tasks_at_time(time)
