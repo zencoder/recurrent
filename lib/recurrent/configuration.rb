@@ -2,7 +2,6 @@ module Recurrent
   class Configuration
 
     class << self
-      attr_accessor :task_file
 
       def self.block_accessor(*fields)
         fields.each do |field|
@@ -19,7 +18,7 @@ module Recurrent
         end
       end
       block_accessor :logger
-    
+
     end
   end
 end

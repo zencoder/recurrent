@@ -4,10 +4,14 @@ module Recurrent
     attr_accessor :tasks
     attr_reader :identifier
 
-    def initialize
+    def initialize(task_file=nil)
       @tasks = []
       @identifier = "host:#{Socket.gethostname} pid:#{Process.pid}" rescue "pid:#{Process.pid}"
-      eval(File.read(Configuration.task_file)) if Configuration.task_file
+      eval(File.read(task_file)) if task_file
+    end
+
+    def configure
+      Configuration
     end
 
     def execute
