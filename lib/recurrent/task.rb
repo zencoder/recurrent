@@ -4,8 +4,9 @@ module Recurrent
 
     def initialize(options={})
       @name = options[:name]
-      @schedule = self.class.create_schedule_from_frequency(options[:schedule], options[:start_time])
+      @schedule = self.class.create_schedule(options[:name], options[:schedule], options[:start_time])
       @action = options[:action]
+      Configuration.save_task_schedule.call(name.to_s, schedule.to_yaml) if Configuration.save_task_schedule
     end
 
     def next_occurrence
@@ -37,7 +38,7 @@ module Recurrent
       end
     end
 
-    def self.create_schedule_from_frequency(frequency, start_time=nil)
+    def self.create_schedule(name, frequency, start_time=nil)
       if frequency.is_a? IceCube::Rule
         rule = frequency
         frequency_in_seconds = rule.frequency_in_seconds
@@ -45,13 +46,35 @@ module Recurrent
         rule = create_rule_from_frequency(frequency)
         frequency_in_seconds = frequency
       end
-      start_time ||= derive_start_time(frequency_in_seconds)
+      start_time ||= derive_start_time(name, frequency_in_seconds)
       schedule = IceCube::Schedule.new(start_time)
       schedule.add_recurrence_rule rule
       schedule
     end
 
-    def self.derive_start_time(frequency)
+    def self.derive_start_time(name, frequency)
+      if Configuration.load_task_schedule
+        derive_start_time_from_saved_schedule(name, frequency)
+      else
+        derive_start_time_from_frequency(frequency)
+      end
+    end
+
+    def self.derive_start_time_from_saved_schedule(name, frequency)
+      saved_schedule = Configuration.load_task_schedule.call(name)
+      if saved_schedule
+        saved_schedule = saved_schedule.from_yaml
+        if saved_schedule.frequency_in_seconds == frequency
+          saved_schedule.next_occurrence
+        else
+          derive_start_time_from_frequency(frequency)
+        end
+      else
+        derive_start_time_from_frequency(frequency)
+      end
+    end
+
+    def self.derive_start_time_from_frequency(frequency)
       current_time = Time.now
       if frequency < 1.minute
         current_time.change(:sec => 0, :usec => 0)
