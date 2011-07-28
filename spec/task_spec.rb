@@ -2,6 +2,9 @@ require 'spec_helper'
 
 module Recurrent
   describe Task do
+    before(:all) do
+      Configuration.logging = "quiet"
+    end
 
     describe "#next_occurrence" do
       context "a task that occurs ever 10 seconds and has just occurred" do

@@ -42,7 +42,7 @@ module Recurrent
     end
 
     def every(frequency, key, options={}, &block)
-      log("Adding Task: #{key}")
+      log("Adding Task: #{key}") unless Configuration.logging == "quiet"
       @tasks << Task.new(:name => key,
                          :schedule => create_schedule(key, frequency, options[:start_time]),
                          :action => block)
@@ -69,59 +69,59 @@ module Recurrent
     end
 
     def create_rule_from_frequency(frequency)
-      log("Creating an IceCube Rule")
+      log("Creating an IceCube Rule") unless Configuration.logging == "quiet"
       case frequency.inspect
       when /year/
-        log("Creating a yearly rule")
+        log("Creating a yearly rule") unless Configuration.logging == "quiet"
         IceCube::Rule.yearly(frequency / 1.year)
       when /month/
-        log("Creating a monthly rule")
+        log("Creating a monthly rule") unless Configuration.logging == "quiet"
         IceCube::Rule.monthly(frequency / 1.month)
       when /day/
         if ((frequency / 1.week).is_a? Integer) && ((frequency / 1.week) != 0)
-          log("Creating a weekly rule")
+          log("Creating a weekly rule") unless Configuration.logging == "quiet"
           IceCube::Rule.weekly(frequency / 1.week)
         else
-          log("Creating a daily rule")
+          log("Creating a daily rule") unless Configuration.logging == "quiet"
           IceCube::Rule.daily(frequency / 1.day)
         end
       else
         if ((frequency / 1.hour).is_a? Integer) && ((frequency / 1.hour) != 0)
-          log("Creating an hourly rule")
+          log("Creating an hourly rule") unless Configuration.logging == "quiet"
           IceCube::Rule.hourly(frequency / 1.hour)
         elsif ((frequency / 1.minute).is_a? Integer) && ((frequency / 1.minute) != 0)
-            log("Creating a minutely rule")
+            log("Creating a minutely rule") unless Configuration.logging == "quiet"
             IceCube::Rule.minutely(frequency / 1.minute)
         else
-          log("Creating a secondly rule")
+          log("Creating a secondly rule") unless Configuration.logging == "quiet"
           IceCube::Rule.secondly(frequency)
         end
       end
     end
 
     def create_schedule(name, frequency, start_time=nil)
-      log("Creating schedule for: #{name}")
+      log("Creating schedule for: #{name}") unless Configuration.logging == "quiet"
       if frequency.is_a? IceCube::Rule
-        log("Frequency is an IceCube Rule: #{frequency.to_s}")
+        log("Frequency is an IceCube Rule: #{frequency.to_s}") unless Configuration.logging == "quiet"
         rule = frequency
         frequency_in_seconds = rule.frequency_in_seconds
       else
-        log("Frequency is an integer: #{frequency}")
+        log("Frequency is an integer: #{frequency}") unless Configuration.logging == "quiet"
         rule = create_rule_from_frequency(frequency)
-        log("IceCube Rule created: #{rule.to_s}")
+        log("IceCube Rule created: #{rule.to_s}") unless Configuration.logging == "quiet"
         frequency_in_seconds = frequency
       end
       start_time ||= derive_start_time(name, frequency_in_seconds)
       schedule = IceCube::Schedule.new(start_time)
       schedule.add_recurrence_rule rule
-      log("schedule created for #{name}")
+      log("schedule created for #{name}") unless Configuration.logging == "quiet"
       schedule
     end
 
     def derive_start_time(name, frequency)
-      log("No start time provided, deriving one.")
+      log("No start time provided, deriving one.") unless Configuration.logging == "quiet"
       if Configuration.load_task_schedule
-        log("Attempting to derive from saved schedule")
+        log("Attempting to derive from saved schedule") unless Configuration.logging == "quiet"
         derive_start_time_from_saved_schedule(name, frequency)
       else
         derive_start_time_from_frequency(frequency)
@@ -131,13 +131,13 @@ module Recurrent
     def derive_start_time_from_saved_schedule(name, frequency)
       saved_schedule = Configuration.load_task_schedule.call(name)
       if saved_schedule
-        log("Saved schedule found for #{name}")
+        log("Saved schedule found for #{name}") unless Configuration.logging == "quiet"
         saved_schedule = IceCube::Schedule.from_yaml(saved_schedule)
         if saved_schedule.frequency_in_seconds == frequency
-          log("Saved schedule frequency matches, setting start time to saved schedules next occurrence: #{saved_schedule.next_occurrence.to_s(:seconds)}")
+          log("Saved schedule frequency matches, setting start time to saved schedules next occurrence: #{saved_schedule.next_occurrence.to_s(:seconds)}") unless Configuration.logging == "quiet"
           saved_schedule.next_occurrence
         else
-          log("Schedule frequency does not match saved schedule frequency")
+          log("Schedule frequency does not match saved schedule frequency") unless Configuration.logging == "quiet"
           derive_start_time_from_frequency(frequency)
         end
       else
@@ -146,25 +146,25 @@ module Recurrent
     end
 
     def derive_start_time_from_frequency(frequency)
-      log("Deriving start time from frequency")
+      log("Deriving start time from frequency") unless Configuration.logging == "quiet"
       current_time = Time.now
       if frequency < 1.minute
-        log("Setting start time to beginning of current minute")
+        log("Setting start time to beginning of current minute") unless Configuration.logging == "quiet"
         current_time.change(:sec => 0, :usec => 0)
       elsif frequency < 1.hour
-        log("Setting start time to beginning of current hour")
+        log("Setting start time to beginning of current hour") unless Configuration.logging == "quiet"
         current_time.change(:min => 0, :sec => 0, :usec => 0)
       elsif frequency < 1.day
-        log("Setting start time to beginning of current day")
+        log("Setting start time to beginning of current day") unless Configuration.logging == "quiet"
         current_time.beginning_of_day
       elsif frequency < 1.week
-        log("Setting start time to beginning of current week")
+        log("Setting start time to beginning of current week") unless Configuration.logging == "quiet"
         current_time.beginning_of_week
       elsif frequency < 1.month
-        log("Setting start time to beginning of current month")
+        log("Setting start time to beginning of current month") unless Configuration.logging == "quiet"
         current_time.beginning_of_month
       elsif frequency < 1.year
-        log("Setting start time to beginning of current year")
+        log("Setting start time to beginning of current year") unless Configuration.logging == "quiet"
         current_time.beginning_of_year
       end
     end

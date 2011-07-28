@@ -3,6 +3,8 @@ module Recurrent
 
     class << self
 
+      attr_accessor :logging
+
       def self.block_accessor(*fields)
         fields.each do |field|
           attr_writer field

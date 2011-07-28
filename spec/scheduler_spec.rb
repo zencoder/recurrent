@@ -2,6 +2,10 @@ require 'spec_helper'
 
 module Recurrent
   describe Scheduler do
+    before(:all) do
+      Configuration.logging = "quiet"
+    end
+
     describe "#log" do
       before(:each) do
         @scheduler = Scheduler.new
@@ -20,6 +24,7 @@ module Recurrent
             some_logger.info(message)
           end
           @scheduler.log("testing logger")
+          Configuration.logger = nil
         end
       end
     end
