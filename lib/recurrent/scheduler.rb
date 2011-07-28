@@ -2,6 +2,7 @@ module Recurrent
   class Scheduler
 
     attr_accessor :tasks
+    attr_reader :identifier
 
     def initialize
       @tasks = []
@@ -43,9 +44,13 @@ module Recurrent
     end
 
     def log(message)
-      message = "[Recurrent Scheduler: #{@identifier}] - #{message}"
+      message = log_message(message)
       puts message
-      Configuration.logger.call(message)
+      Configuration.logger.call(message) if Configuration.logger
+    end
+
+    def log_message(message)
+      "[Recurrent Scheduler: #{@identifier}] - #{message}"
     end
 
     def next_task_time

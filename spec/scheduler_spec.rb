@@ -2,6 +2,35 @@ require 'spec_helper'
 
 module Recurrent
   describe Scheduler do
+    describe "#log" do
+      before(:each) do
+        @scheduler = Scheduler.new
+      end
+
+      it "should send a message to puts" do
+        @scheduler.should_receive(:puts).with(@scheduler.log_message("testing puts"))
+        @scheduler.log("testing puts")
+      end
+
+      context "when a logger is configured" do
+        it "should send a message to the logger" do
+          some_logger = stub('logger')
+          some_logger.should_receive(:info).with(@scheduler.log_message("testing logger"))
+          Configuration.logger do |message|
+            some_logger.info(message)
+          end
+          @scheduler.log("testing logger")
+        end
+      end
+    end
+
+    describe "#log_message" do
+      it "adds the scheduler's identifier to the message" do
+        scheduler = Scheduler.new
+        scheduler.log_message("testing").should == "[Recurrent Scheduler: #{scheduler.identifier}] - testing"
+      end
+    end
+
     describe "#next_task_time" do
       context "when there are multiple tasks" do
         it "should return the soonest time at which a task is scheduled" do
