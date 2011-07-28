@@ -45,7 +45,7 @@ module Recurrent
     def log(message)
       message = "[Recurrent Scheduler: #{@identifier}] - #{message}"
       puts message
-      Configuration.logger(message)
+      Configuration.logger.call(message)
     end
 
     def next_task_time
