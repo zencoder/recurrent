@@ -33,7 +33,20 @@ module Recurrent
 
         tasks_to_execute.each do |task|
           Thread.new do
-            task.action.call
+            log("Running #{task.name} at #{execute_at.to_s(:seconds)}")
+            return_value = task.action.call
+            if task.save?
+              log("#{task.name} wants to save its return value")
+              if Configuration.save_task_return_value
+                Configuration.save_task_return_value.call(:name => task.name.to_s,
+                                                          :return_value => return_value,
+                                                          :executed_at => execute_at,
+                                                          :executed_by => @identifier)
+                log("#{task.name} return value saved")
+              else
+                log("but no method to save return values is configured")
+              end
+            end
           end
         end
 
@@ -45,7 +58,8 @@ module Recurrent
       log("Adding Task: #{key}") unless Configuration.logging == "quiet"
       @tasks << Task.new(:name => key,
                          :schedule => create_schedule(key, frequency, options[:start_time]),
-                         :action => block)
+                         :action => block,
+                         :save => options[:save])
       log("| #{key} added to Scheduler") unless Configuration.logging == "quiet"
     end
 
