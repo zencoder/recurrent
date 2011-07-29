@@ -216,6 +216,52 @@ module Recurrent
           end
         end
       end
+
+      describe "derive_start_time_from_saved_schedule" do
+        before(:all) do
+          @scheduler = Scheduler.new
+          Configuration.load_task_schedule do |name|
+            current_time = Time.new
+            current_time.change(:sec => 0, :usec => 0)
+            @scheduler.create_schedule(:test, 10.seconds, current_time).to_yaml if name == 'test'
+          end
+        end
+
+        describe "a schedule being created with a saved schedule with the same name and frequency" do
+          it "derives its start time from the saved schedule" do
+            @scheduler.should_not_receive(:derive_start_time_from_frequency)
+            @scheduler.create_schedule(:test, 10.seconds)
+          end
+
+          describe "the created schedule's start time" do
+            it "should be the next occurrence of the saved schedule" do
+              saved_schedule = IceCube::Schedule.from_yaml(Configuration.load_task_schedule.call('test'))
+              created_schedule = @scheduler.create_schedule(:test, 10.seconds)
+              created_schedule.start_date.to_s(:seconds).should == saved_schedule.next_occurrence.to_s(:seconds)
+            end
+          end
+
+        end
+
+        describe "a schedule being created with a saved schedule with the same name and different frequency" do
+          it "derives its start time from the frequency" do
+            @scheduler.should_receive(:derive_start_time_from_frequency)
+            @scheduler.create_schedule(:test, 15.seconds)
+          end
+        end
+
+        describe "a schedule being created without a saved schedule" do
+          it "derives its start time from the frequency" do
+            @scheduler.should_receive(:derive_start_time_from_frequency)
+            @scheduler.create_schedule(:new_test, 10.seconds)
+          end
+        end
+
+
+        after(:all) do
+          Configuration.load_task_schedule = nil;
+        end
+      end
     end
 
   end
