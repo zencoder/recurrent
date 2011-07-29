@@ -46,7 +46,7 @@ module Recurrent
       @tasks << Task.new(:name => key,
                          :schedule => create_schedule(key, frequency, options[:start_time]),
                          :action => block)
-      log("| #{key} added to Scheduler") unless Configuration.logging == "quiet"                         
+      log("| #{key} added to Scheduler") unless Configuration.logging == "quiet"
     end
 
     def log(message)
