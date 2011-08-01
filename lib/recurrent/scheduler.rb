@@ -17,9 +17,9 @@ module Recurrent
     def execute
       log "Starting Recurrent"
 
-      trap('TERM') { log 'Exiting...'; $exit = true }
-      trap('INT')  { log 'Exiting...'; $exit = true }
-      trap('QUIT') { log 'Exiting...'; $exit = true }
+      trap('TERM') { log 'Waiting for running tasks and exiting...'; $exit = true }
+      trap('INT')  { log 'Waiting for running tasks and exiting...'; $exit = true }
+      trap('QUIT') { log 'Waiting for running tasks and exiting...'; $exit = true }
 
       loop do
         execute_at = next_task_time
@@ -29,7 +29,7 @@ module Recurrent
           sleep(0.5) unless $exit
         end
 
-        break if $exit
+        wait_for_running_tasks && break if $exit
 
         tasks_to_execute.each do |task|
           log("#{task.name}: Executing at #{execute_at.to_s(:seconds)}")
@@ -69,7 +69,7 @@ module Recurrent
           end
         end
 
-        break if $exit
+        wait_for_running_tasks && break if $exit
       end
     end
 
@@ -200,6 +200,16 @@ module Recurrent
       elsif frequency < 1.year
         log("| Setting start time to beginning of current year") unless Configuration.logging == "quiet"
         current_time.beginning_of_year
+      end
+    end
+
+    def wait_for_running_tasks
+      running_tasks = tasks.select do |task|
+        task.thread
+      end
+      log ("Waiting for #{running_tasks.size} tasks: #{running_tasks.map(&:name).to_sentence}")
+      running_tasks.each do |task|
+        task.thread.join
       end
     end
   end
