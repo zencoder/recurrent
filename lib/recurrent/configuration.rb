@@ -19,7 +19,7 @@ module Recurrent
           ")
         end
       end
-      block_accessor :logger, :save_task_schedule, :load_task_schedule, :save_task_return_value, :task_locking
+      block_accessor :logger, :save_task_schedule, :load_task_schedule, :save_task_return_value, :task_locking, :handle_slow_task
 
     end
   end

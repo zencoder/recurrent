@@ -14,94 +14,6 @@ module Recurrent
       Configuration
     end
 
-    def execute
-      log "Starting Recurrent"
-
-      trap('TERM') { log 'Waiting for running tasks and exiting...'; $exit = true }
-      trap('INT')  { log 'Waiting for running tasks and exiting...'; $exit = true }
-      trap('QUIT') { log 'Waiting for running tasks and exiting...'; $exit = true }
-
-      loop do
-        execute_at = next_task_time
-        tasks_to_execute = tasks_at_time(execute_at)
-
-        until execute_at.past?
-          sleep(0.5) unless $exit
-        end
-
-        wait_for_running_tasks && break if $exit
-
-        tasks_to_execute.each do |task|
-          log("#{task.name}: Executing at #{execute_at.to_s(:seconds)}")
-          if task.thread
-            log("#{task.name}: Execution from #{task.current_execution_timestamp.to_s(:seconds)} still running, aborting this execution.")
-          else
-            task.current_execution_timestamp = execute_at
-            task.thread = Thread.new do
-              if Configuration.task_locking
-                result = Configuration.task_locking.call(:name => task.name.to_s, :action => task.action)
-                if result[:task_ran?]
-                  log("#{task.name}: Lock established, task completed.")
-                  return_value = result[:task_return_value]
-                else
-                  log("#{task.name}: Unable to establish a lock, task did not run.")
-                  break
-                end
-              else
-                return_value = task.action.call
-              end
-
-              if task.save?
-                log("#{task.name}: Wants to save its return value.")
-                if Configuration.save_task_return_value
-                  Configuration.save_task_return_value.call(:name => task.name.to_s,
-                                                            :return_value => return_value,
-                                                            :executed_at => execute_at,
-                                                            :executed_by => @identifier)
-                  log("#{task.name}: Return value saved.")
-                else
-                  log("#{task.name}: No method to save return values is configured.")
-                end
-              end
-              task.current_execution_timestamp = nil
-              task.thread = nil
-            end
-          end
-        end
-
-        wait_for_running_tasks && break if $exit
-      end
-    end
-
-    def every(frequency, key, options={}, &block)
-      log("Adding Task: #{key}") unless Configuration.logging == "quiet"
-      @tasks << Task.new(:name => key,
-                         :schedule => create_schedule(key, frequency, options[:start_time]),
-                         :action => block,
-                         :save => options[:save])
-      log("| #{key} added to Scheduler") unless Configuration.logging == "quiet"
-    end
-
-    def log(message)
-      message = log_message(message)
-      puts message
-      Configuration.logger.call(message) if Configuration.logger
-    end
-
-    def log_message(message)
-      "[Recurrent - Process:#{@identifier} - Timestamp:#{Time.now.to_s(:seconds)}] - #{message}"
-    end
-
-    def next_task_time
-      @tasks.map { |task| task.next_occurrence }.sort.first
-    end
-
-    def tasks_at_time(time)
-      tasks.select do |task|
-        task.next_occurrence == time
-      end
-    end
-
     def create_rule_from_frequency(frequency)
       log("| Creating an IceCube Rule") unless Configuration.logging == "quiet"
       case frequency.inspect
@@ -203,10 +115,114 @@ module Recurrent
       end
     end
 
+    def handle_task_still_running(task, current_time)
+      if Configuration.handle_slow_task
+        Configuration.handle_slow_task.call(task.name.to_s, current_time, task.current_execution_timestamp)
+      end
+      log("#{task.name}: Execution from #{task.current_execution_timestamp.to_s(:seconds)} still running, aborting this execution.")
+    end
+
+    def every(frequency, key, options={}, &block)
+      log("Adding Task: #{key}") unless Configuration.logging == "quiet"
+      @tasks << Task.new(:name => key,
+                         :schedule => create_schedule(key, frequency, options[:start_time]),
+                         :action => block,
+                         :save => options[:save])
+      log("| #{key} added to Scheduler") unless Configuration.logging == "quiet"
+    end
+
+    def execute
+      log "Starting Recurrent"
+
+      trap('TERM') { log 'Waiting for running tasks and exiting...'; $exit = true }
+      trap('INT')  { log 'Waiting for running tasks and exiting...'; $exit = true }
+      trap('QUIT') { log 'Waiting for running tasks and exiting...'; $exit = true }
+
+      loop do
+        execution_time = next_task_time
+        tasks_to_execute = tasks_at_time(execution_time)
+
+        wait_for_running_tasks && break if $exit
+
+        wait_until(execution_time)
+
+        wait_for_running_tasks && break if $exit
+
+        tasks_to_execute.each do |task|
+          log("#{task.name}: Executing at #{execution_time.to_s(:seconds)}")
+          if task.running?
+            handle_task_still_running(task, execution_time)
+          else
+            task.current_execution_timestamp = execution_time
+            execute_task(task)
+          end
+        end
+
+        wait_for_running_tasks && break if $exit
+      end
+    end
+
+    def execute_task(task)
+      task.thread = Thread.new do
+        if Configuration.task_locking
+          execute_task_with_locking(task)
+        else
+          return_value = task.action.call
+          save_task_results(task, return_value) if task.save?
+        end
+        task.current_execution_timestamp = nil
+        task.thread = nil
+      end
+    end
+
+    def execute_task_with_locking(task)
+      result = Configuration.task_locking.call(:name => task.name.to_s, :action => task.action)
+      if result[:task_ran?]
+        log("#{task.name}: Lock established, task completed.")
+        return_value = result[:task_return_value]
+        save_task_results(task, return_value) if task.save?
+      else
+        log("#{task.name}: Unable to establish a lock, task did not run.")
+      end
+    end
+
+    def log(message)
+      message = log_message(message)
+      puts message
+      Configuration.logger.call(message) if Configuration.logger
+    end
+
+    def log_message(message)
+      "[Recurrent - Process:#{@identifier} - Timestamp:#{Time.now.to_s(:seconds)}] - #{message}"
+    end
+
+    def next_task_time
+      @tasks.map { |task| task.next_occurrence }.sort.first
+    end
+
+    def save_task_results(task, return_value)
+      log("#{task.name}: Wants to save its return value.")
+      if Configuration.save_task_return_value
+        Configuration.save_task_return_value.call(:name => task.name.to_s,
+                                                  :return_value => return_value,
+                                                  :executed_at => task.current_execution_timestamp,
+                                                  :executed_by => @identifier)
+        log("#{task.name}: Return value saved.")
+      else
+        log("#{task.name}: No method to save return values is configured.")
+      end
+    end
+
+    def tasks_at_time(time)
+      tasks.select do |task|
+        task.next_occurrence == time
+      end
+    end
+
     def wait_for_running_tasks
       if task = running_tasks.first
         log("Waiting for #{task.name} to finish.")
-        task.thread.join
+        task.thread.try(:join)
         wait_for_running_tasks
       else
         log "All tasks finished, exiting..."
@@ -216,8 +232,15 @@ module Recurrent
 
     def running_tasks
       tasks.select do |task|
-        task.thread
+        task.running?
       end
     end
+
+    def wait_until(time)
+      until time.past?
+        sleep(0.5) unless $exit
+      end
+    end
+
   end
 end

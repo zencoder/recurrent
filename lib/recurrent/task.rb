@@ -16,7 +16,11 @@ module Recurrent
     end
 
     def save?
-      save == true ? true : false
+      !!save
+    end
+
+    def running?
+      !!thread
     end
 
   end
