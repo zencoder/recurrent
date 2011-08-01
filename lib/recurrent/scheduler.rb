@@ -33,18 +33,30 @@ module Recurrent
 
         tasks_to_execute.each do |task|
           Thread.new do
-            log("Running #{task.name} at #{execute_at.to_s(:seconds)}")
-            return_value = task.action.call
+            log("#{task.name}: Executing at #{execute_at.to_s(:seconds)}")
+            if Configuration.task_locking
+              result = Configuration.task_locking.call(:name => task.name.to_s, :action => task.action)
+              if result[:task_ran?]
+                log("#{task.name}: Lock established, task completed.")
+                return_value = result[:task_return_value]
+              else
+                log("#{task.name}: Unable to establish a lock, task did not run.")
+                break
+              end
+            else
+              return_value = task.action.call
+            end
+
             if task.save?
-              log("#{task.name} wants to save its return value")
+              log("#{task.name}: Wants to save its return value.")
               if Configuration.save_task_return_value
                 Configuration.save_task_return_value.call(:name => task.name.to_s,
                                                           :return_value => return_value,
                                                           :executed_at => execute_at,
                                                           :executed_by => @identifier)
-                log("#{task.name} return value saved")
+                log("#{task.name}: Return value saved.")
               else
-                log("but no method to save return values is configured")
+                log("#{task.name}: No method to save return values is configured.")
               end
             end
           end
@@ -70,7 +82,7 @@ module Recurrent
     end
 
     def log_message(message)
-      "[Recurrent Scheduler: #{@identifier}] - #{message}"
+      "[Recurrent - Process:#{@identifier} - Timestamp:#{Time.now.to_s(:seconds)}] - #{message}"
     end
 
     def next_task_time
