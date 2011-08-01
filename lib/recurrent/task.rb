@@ -1,6 +1,6 @@
 module Recurrent
   class Task
-    attr_accessor :name, :schedule, :action, :save
+    attr_accessor :name, :schedule, :action, :save, :thread, :current_execution_timestamp
 
     def initialize(options={})
       @name = options[:name]
