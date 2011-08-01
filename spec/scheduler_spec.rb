@@ -32,7 +32,7 @@ module Recurrent
     describe "#log_message" do
       it "adds the scheduler's identifier to the message" do
         scheduler = Scheduler.new
-        scheduler.log_message("testing").should == "[Recurrent Scheduler: #{scheduler.identifier}] - testing"
+        scheduler.log_message("testing").should == "[Recurrent - Process:#{scheduler.identifier} - Timestamp:#{Time.now.to_s(:seconds)}] - testing"
       end
     end
 
