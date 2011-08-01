@@ -204,12 +204,19 @@ module Recurrent
     end
 
     def wait_for_running_tasks
-      running_tasks = tasks.select do |task|
-        task.thread
-      end
-      log ("Waiting for #{running_tasks.size} tasks: #{running_tasks.map(&:name).to_sentence}")
-      running_tasks.each do |task|
+      if task = running_tasks.first
+        log("Waiting for #{task.name} to finish.")
         task.thread.join
+        wait_for_running_tasks
+      else
+        log "All tasks finished, exiting..."
+        true
+      end
+    end
+
+    def running_tasks
+      tasks.select do |task|
+        task.thread
       end
     end
   end
