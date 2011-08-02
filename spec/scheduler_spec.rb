@@ -11,11 +11,6 @@ module Recurrent
         @scheduler = Scheduler.new
       end
 
-      it "should send a message to puts" do
-        @scheduler.should_receive(:puts).with(@scheduler.log_message("testing puts"))
-        @scheduler.log("testing puts")
-      end
-
       context "when a logger is configured" do
         it "should send a message to the logger" do
           some_logger = stub('logger')
