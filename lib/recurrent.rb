@@ -7,6 +7,7 @@ end
 require 'recurrent/ice_cube_extensions'
 
 require 'recurrent/configuration'
+require 'recurrent/logger'
 require 'recurrent/scheduler'
 require 'recurrent/task'
 require 'recurrent/version'
