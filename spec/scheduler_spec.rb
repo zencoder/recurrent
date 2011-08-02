@@ -218,7 +218,7 @@ module Recurrent
           Configuration.load_task_schedule do |name|
             current_time = Time.new
             current_time.change(:sec => 0, :usec => 0)
-            @scheduler.create_schedule(:test, 10.seconds, current_time).to_yaml if name == 'test'
+            @scheduler.create_schedule(:test, 10.seconds, current_time) if name == :test
           end
         end
 
@@ -230,7 +230,7 @@ module Recurrent
 
           describe "the created schedule's start time" do
             it "should be the next occurrence of the saved schedule" do
-              saved_schedule = IceCube::Schedule.from_yaml(Configuration.load_task_schedule.call('test'))
+              saved_schedule = Configuration.load_task_schedule.call(:test)
               created_schedule = @scheduler.create_schedule(:test, 10.seconds)
               created_schedule.start_date.to_s(:seconds).should == saved_schedule.next_occurrence.to_s(:seconds)
             end
