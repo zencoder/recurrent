@@ -9,11 +9,11 @@ module Recurrent
     end
 
     def execute
-      logger.log "Starting Recurrent"
+      logger.info "Starting Recurrent"
 
-      trap('TERM') { logger.log 'Waiting for running tasks and exiting...'; $exit = true }
-      trap('INT')  { logger.log 'Waiting for running tasks and exiting...'; $exit = true }
-      trap('QUIT') { logger.log 'Waiting for running tasks and exiting...'; $exit = true }
+      trap('TERM') { logger.info 'Waiting for running tasks and exiting...'; $exit = true }
+      trap('INT')  { logger.info 'Waiting for running tasks and exiting...'; $exit = true }
+      trap('QUIT') { logger.info 'Waiting for running tasks and exiting...'; $exit = true }
 
       loop do
         execution_time = scheduler.next_task_time
@@ -26,13 +26,13 @@ module Recurrent
         wait_for_running_tasks && break if $exit
 
         tasks_to_execute.each do |task|
-          logger.log "#{task.name}: Executing at #{execution_time.to_s(:seconds)}"
+          logger.info "#{task.name}: Executing at #{execution_time.to_s(:seconds)}"
           task.execute(execution_time)
         end
 
         wait_for_running_tasks && break if $exit
       end
-      logger.log("Goodbye.")
+      logger.info("Goodbye.")
     end
 
     def wait_for_running_tasks
@@ -45,12 +45,12 @@ module Recurrent
 
     def wait_for_running_tasks_for(seconds)
       while scheduler.running_tasks.any? do
-        logger.log "Killing running tasks in #{seconds.inspect}."
+        logger.info "Killing running tasks in #{seconds.inspect}."
         seconds -= 1
         sleep(1)
         if seconds == 0
           scheduler.running_tasks.each do |task|
-            logger.log "Killing #{task.name}."
+            logger.info "Killing #{task.name}."
             task.thread = nil unless task.thread.try(:kill).try(:alive?)
           end
         end
@@ -60,11 +60,11 @@ module Recurrent
 
     def wait_for_running_tasks_indefinitely
       if task = scheduler.running_tasks.first
-        logger.log "Waiting for #{task.name} to finish."
+        logger.info "Waiting for #{task.name} to finish."
         task.thread.try(:join)
         wait_for_running_tasks_indefinitely
       else
-        logger.log "All tasks finished, exiting..."
+        logger.info "All tasks finished, exiting..."
         true
       end
     end

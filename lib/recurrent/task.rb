@@ -33,11 +33,11 @@ module Recurrent
     def execute_action_with_locking
       result = Configuration.task_locking.call(:name => name, :action => action)
       if result.task_ran?
-        logger.log "#{name}: Lock established, task completed."
+        logger.info "#{name}: Lock established, task completed."
         return_value = result.task_return_value
         save_results(return_value) if save?
       else
-        logger.log "#{name}: Unable to establish a lock, task did not run."
+        logger.info "#{name}: Unable to establish a lock, task did not run."
       end
     end
 
@@ -45,7 +45,7 @@ module Recurrent
       if Configuration.handle_slow_task
         Configuration.handle_slow_task.call(name, current_time, current_execution_timestamp)
       end
-      logger.log "#{name}: Execution from #{current_execution_timestamp.to_s(:seconds)} still running, aborting this execution."
+      logger.info "#{name}: Execution from #{current_execution_timestamp.to_s(:seconds)} still running, aborting this execution."
     end
 
 
@@ -59,15 +59,15 @@ module Recurrent
     end
 
     def save_results(return_value)
-      logger.log "#{name}: Wants to save its return value."
+      logger.info "#{name}: Wants to save its return value."
       if Configuration.save_task_return_value
         Configuration.save_task_return_value.call(:name => name,
                                                   :return_value => return_value,
                                                   :executed_at => current_execution_timestamp,
                                                   :executed_by => logger.identifier)
-        logger.log "#{name}: Return value saved."
+        logger.info "#{name}: Return value saved."
       else
-        logger.log "#{name}: No method to save return values is configured."
+        logger.info "#{name}: No method to save return values is configured."
       end
     end
 
