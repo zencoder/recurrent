@@ -3,7 +3,7 @@ module Recurrent
 
     class << self
 
-      attr_accessor :logging
+      attr_accessor :logging, :wait_for_running_tasks_on_exit_for
 
       def self.block_accessor(*fields)
         fields.each do |field|

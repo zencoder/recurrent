@@ -72,7 +72,7 @@ module Recurrent
     end
 
     def running?
-      !!thread
+      thread.try(:alive?)
     end
 
   end
