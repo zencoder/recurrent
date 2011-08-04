@@ -15,19 +15,10 @@ module Recurrent
       return handle_still_running(execution_time) if running?
       @current_execution_timestamp = execution_time
       @thread = Thread.new do
-        if Configuration.task_locking
-          execute_action_with_locking
-        else
-          execute_action
-        end
+        return_value = action.call
+        save_results(return_value) if save?
         @current_execution_timestamp = nil
-        @thread = nil
       end
-    end
-
-    def execute_action
-      return_value = action.call
-      save_results(return_value) if save?
     end
 
     def execute_action_with_locking

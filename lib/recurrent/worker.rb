@@ -8,13 +8,23 @@ module Recurrent
       @logger = scheduler.logger
     end
 
-    def execute
+    def start
       logger.info "Starting Recurrent"
 
       trap('TERM') { logger.info 'Waiting for running tasks and exiting...'; $exit = true }
       trap('INT')  { logger.info 'Waiting for running tasks and exiting...'; $exit = true }
       trap('QUIT') { logger.info 'Waiting for running tasks and exiting...'; $exit = true }
 
+      if Configuration.process_locking
+        execute_with_locking
+      else
+        execute
+      end
+
+      logger.info("Goodbye.")
+    end
+
+    def execute
       loop do
         execution_time = scheduler.next_task_time
         tasks_to_execute = scheduler.tasks_at_time(execution_time)
@@ -32,7 +42,19 @@ module Recurrent
 
         wait_for_running_tasks && break if $exit
       end
-      logger.info("Goodbye.")
+    end
+
+    def execute_with_locking
+      lock_established = nil
+      until lock_established
+        break if $exit
+        lock_established = Configuration.process_locking.call('recurrent') do
+          execute
+        end
+        break if $exit
+        logger.info 'Tasks are being monitored by another process. Standing by.'
+        sleep(5)
+      end
     end
 
     def wait_for_running_tasks
