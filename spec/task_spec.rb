@@ -33,6 +33,38 @@ module Recurrent
       end
     end
 
+    describe "#handle_still_running" do
+      before(:all) do
+        @executing_task_time = 5.minutes.ago
+        @current_time = Time.now
+        @task = Task.new :name => 'handle_still_running_test', :logger => Logger.new('some identifier')
+        @task.thread = Thread.new { Thread.current["execution_time"] = @executing_task_time }
+      end
+
+      context "When no method for handling a still running task is configured" do
+        it "just logs that the task is still running" do
+          @task.logger.should_receive(:info).with("handle_still_running_test: Execution from #{@executing_task_time.to_s(:seconds)} still running, aborting this execution.")
+          @task.handle_still_running(@current_time)
+        end
+      end
+
+      context "When a method for handling a still running task is configured" do
+        before(:each) do
+          Configuration.handle_slow_task { |options| 'testing is fun' }
+        end
+
+        it "logs that the task is still running and calls the method" do
+          @task.logger.should_receive(:info).with("handle_still_running_test: Execution from #{@executing_task_time.to_s(:seconds)} still running, aborting this execution.")
+          Configuration.handle_slow_task.should_receive(:call).with('handle_still_running_test', @current_time)
+          @task.handle_still_running(@current_time)
+        end
+
+        after(:each) do
+          Configuration.handle_slow_task = nil
+        end
+      end
+    end
+
     describe "#save?" do
       describe "A task initialized with :save => true" do
         it "returns true" do
