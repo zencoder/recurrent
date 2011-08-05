@@ -16,32 +16,27 @@ module Recurrent
 
     def create_rule_from_frequency(frequency)
       logger.info "| Creating an IceCube Rule"
-      case frequency.inspect
-      when /year/
+      if yearly?(frequency)
         logger.info "| Creating a yearly rule"
         IceCube::Rule.yearly(frequency / 1.year)
-      when /month/
+      elsif monthly?(frequency)
         logger.info "| Creating a monthly rule"
         IceCube::Rule.monthly(frequency / 1.month)
-      when /day/
-        if ((frequency / 1.week).is_a? Integer) && ((frequency / 1.week) != 0)
+      elsif weekly?(frequency)
           logger.info "| Creating a weekly rule"
           IceCube::Rule.weekly(frequency / 1.week)
-        else
+      elsif daily?(frequency)
           logger.info "| Creating a daily rule"
           IceCube::Rule.daily(frequency / 1.day)
-        end
+      elsif hourly?(frequency)
+        logger.info "| Creating an hourly rule"
+        IceCube::Rule.hourly(frequency / 1.hour)
+      elsif minutely?(frequency)
+          logger.info "| Creating a minutely rule"
+          IceCube::Rule.minutely(frequency / 1.minute)
       else
-        if ((frequency / 1.hour).is_a? Integer) && ((frequency / 1.hour) != 0)
-          logger.info "| Creating an hourly rule"
-          IceCube::Rule.hourly(frequency / 1.hour)
-        elsif ((frequency / 1.minute).is_a? Integer) && ((frequency / 1.minute) != 0)
-            logger.info "| Creating a minutely rule"
-            IceCube::Rule.minutely(frequency / 1.minute)
-        else
-          logger.info "| Creating a secondly rule"
-          IceCube::Rule.secondly(frequency)
-        end
+        logger.info "| Creating a secondly rule"
+        IceCube::Rule.secondly(frequency)
       end
     end
 
@@ -139,6 +134,16 @@ module Recurrent
         task.next_occurrence == time
       end
     end
+
+    def self.define_frequencies(*frequencies)
+      frequencies.each do |frequency|
+        method_name = frequency == :day ? :daily? : :"#{frequency}ly?"
+        define_method(method_name) do |number|
+          (number % 1.send(frequency)) == 0
+        end
+      end
+    end
+    define_frequencies :year, :month, :week, :day, :hour, :minute, :second
 
   end
 end
