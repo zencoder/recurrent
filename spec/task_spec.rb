@@ -6,6 +6,46 @@ module Recurrent
       Configuration.logging = "quiet"
     end
 
+    describe "#execute" do
+      before :each do
+        @executing_task_time = 5.minutes.ago
+        @current_time = Time.now
+        @task = Task.new :name => 'execute test', :logger => Logger.new('some identifier')
+      end
+
+      context "The task is still running a previous execution" do
+        before :each do
+          @task.thread = Thread.new { Thread.current["execution_time"] = @executing_task_time; sleep(1) }
+        end
+
+        it "calls #handle_still_running and does not execute the task" do
+          @task.should_receive(:handle_still_running).with(@current_time)
+          Thread.should_not_receive(:new)
+          @task.execute(@current_time)
+        end
+      end
+
+      it "doesn't call #handle_still_running" do
+        @task.should_not_receive(:handle_still_running)
+        @task.execute(@current_time)
+      end
+
+      it "creates a thread" do
+        Thread.should_receive(:new)
+        @task.execute(@current_time)
+      end
+
+      it "sets its execution_time" do
+        @task.execute(@current_time)
+        @task.thread['execution_time'].should == @current_time
+      end
+
+      it "calls the action" do
+        @task.action.should_receive(:call)
+        @task.execute(@current_time)
+      end
+    end
+
     describe "#next_occurrence" do
       context "a task that occurs ever 10 seconds and has just occurred" do
         subject do
