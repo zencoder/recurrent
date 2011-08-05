@@ -53,7 +53,7 @@ module Recurrent
       if Configuration.save_task_return_value
         Configuration.save_task_return_value.call(:name => name,
                                                   :return_value => return_value,
-                                                  :executed_at => current_execution_timestamp,
+                                                  :executed_at => thread['execution_time'],
                                                   :executed_by => logger.identifier)
         logger.info "#{name}: Return value saved."
       else

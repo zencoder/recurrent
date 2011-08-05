@@ -33,6 +33,41 @@ module Recurrent
       end
     end
 
+    describe "#save_results" do
+      context "When no method for saving results is configured" do
+        it "logs that information" do
+          t = Task.new :name => 'save_results_test'
+          t.logger.should_receive(:info).with("save_results_test: Wants to save its return value.")
+          t.logger.should_receive(:info).with("save_results_test: No method to save return values is configured.")
+          t.save_results('some value')
+        end
+      end
+
+      context "When a method for saving results is configured" do
+        before(:each) do
+          Configuration.save_task_return_value = lambda { |options| 'testing is fun'}
+          @task = Task.new :name => 'save_results_test', :logger => Logger.new('some identifier')
+          @current_time = Time.now
+          @task.thread = Thread.new { Thread.current["execution_time"] = @current_time }
+        end
+
+        it "calls the method and logs that the value was saved" do
+          @task.logger.should_receive(:info).with("save_results_test: Wants to save its return value.")
+          Configuration.save_task_return_value.should_receive(:call).with(:name => 'save_results_test',
+                                                                          :return_value => 'some value',
+                                                                          :executed_at => @current_time,
+                                                                          :executed_by => 'some identifier')
+          @task.logger.should_receive(:info).with("save_results_test: Return value saved.")
+          @task.save_results('some value')
+        end
+
+        after(:each) do
+          Configuration.save_task_return_value = nil
+        end
+      end
+
+    end
+
     describe "#running?" do
       describe "A task with a live thread" do
         it "returns true" do
