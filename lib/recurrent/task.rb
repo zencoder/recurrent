@@ -1,6 +1,6 @@
 module Recurrent
   class Task
-    attr_accessor :action, :current_execution_timestamp, :name, :logger, :save, :schedule, :thread
+    attr_accessor :action, :name, :logger, :save, :schedule, :thread
 
     def initialize(options={})
       @name = options[:name]
@@ -13,11 +13,10 @@ module Recurrent
 
     def execute(execution_time)
       return handle_still_running(execution_time) if running?
-      @current_execution_timestamp = execution_time
       @thread = Thread.new do
+        Thread.current["execution_time"] = execution_time
         return_value = action.call
         save_results(return_value) if save?
-        @current_execution_timestamp = nil
       end
     end
 
@@ -33,10 +32,10 @@ module Recurrent
     end
 
     def handle_still_running(current_time)
+      logger.info "#{name}: Execution from #{thread['execution_time'].to_s(:seconds)} still running, aborting this execution."
       if Configuration.handle_slow_task
-        Configuration.handle_slow_task.call(name, current_time, current_execution_timestamp)
+        Configuration.handle_slow_task.call(name, current_time)
       end
-      logger.info "#{name}: Execution from #{current_execution_timestamp.to_s(:seconds)} still running, aborting this execution."
     end
 
 
