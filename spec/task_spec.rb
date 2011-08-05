@@ -33,10 +33,30 @@ module Recurrent
       end
     end
 
+    describe "#save?" do
+      describe "A task initialized with :save => true" do
+        it "returns true" do
+          Task.new(:save => true).save?.should == true
+        end
+      end
+
+      describe "A task initialized with :save => false" do
+        it "returns false" do
+          Task.new(:save => false).save?.should == false
+        end
+      end
+
+      describe "A task initialized with no :save option" do
+        it "returns false" do
+          Task.new.save?.should == false
+        end
+      end
+    end
+
     describe "#save_results" do
       context "When no method for saving results is configured" do
         it "logs that information" do
-          t = Task.new :name => 'save_results_test'
+          t = Task.new :name => 'save_results_test', :logger => Logger.new('some identifier')
           t.logger.should_receive(:info).with("save_results_test: Wants to save its return value.")
           t.logger.should_receive(:info).with("save_results_test: No method to save return values is configured.")
           t.save_results('some value')
