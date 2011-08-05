@@ -1,0 +1,149 @@
+module Recurrent
+  class Scheduler
+
+    attr_accessor :tasks, :logger
+
+    def initialize(task_file=nil)
+      @tasks = []
+      identifier = "host:#{Socket.gethostname} pid:#{Process.pid}" rescue "pid:#{Process.pid}"
+      @logger = Logger.new(identifier)
+      eval(File.read(task_file)) if task_file
+    end
+
+    def configure
+      Configuration
+    end
+
+    def create_rule_from_frequency(frequency)
+      logger.info "| Creating an IceCube Rule"
+      if yearly?(frequency)
+        logger.info "| Creating a yearly rule"
+        IceCube::Rule.yearly(frequency / 1.year)
+      elsif monthly?(frequency)
+        logger.info "| Creating a monthly rule"
+        IceCube::Rule.monthly(frequency / 1.month)
+      elsif weekly?(frequency)
+          logger.info "| Creating a weekly rule"
+          IceCube::Rule.weekly(frequency / 1.week)
+      elsif daily?(frequency)
+          logger.info "| Creating a daily rule"
+          IceCube::Rule.daily(frequency / 1.day)
+      elsif hourly?(frequency)
+        logger.info "| Creating an hourly rule"
+        IceCube::Rule.hourly(frequency / 1.hour)
+      elsif minutely?(frequency)
+          logger.info "| Creating a minutely rule"
+          IceCube::Rule.minutely(frequency / 1.minute)
+      else
+        logger.info "| Creating a secondly rule"
+        IceCube::Rule.secondly(frequency)
+      end
+    end
+
+    def create_schedule(name, frequency, start_time=nil)
+      logger.info "| Creating schedule"
+      if frequency.is_a? IceCube::Rule
+        logger.info "| Frequency is an IceCube Rule: #{frequency.to_s}"
+        rule = frequency
+        frequency_in_seconds = rule.frequency_in_seconds
+      else
+        logger.info "| Frequency is an integer: #{frequency}"
+        rule = create_rule_from_frequency(frequency)
+        logger.info "| IceCube Rule created: #{rule.to_s}"
+        frequency_in_seconds = frequency
+      end
+      start_time ||= derive_start_time(name, frequency_in_seconds)
+      schedule = IceCube::Schedule.new(start_time)
+      schedule.add_recurrence_rule rule
+      logger.info "| schedule created"
+      schedule
+    end
+
+    def derive_start_time(name, frequency)
+      logger.info "| No start time provided, deriving one."
+      if Configuration.load_task_schedule
+        logger.info "| Attempting to derive from saved schedule"
+        derive_start_time_from_saved_schedule(name, frequency)
+      else
+        derive_start_time_from_frequency(frequency)
+      end
+    end
+
+    def derive_start_time_from_saved_schedule(name, frequency)
+      saved_schedule = Configuration.load_task_schedule.call(name)
+      if saved_schedule
+        logger.info "| Saved schedule found"
+        if saved_schedule.rrules.first.frequency_in_seconds == frequency
+          logger.info "| Saved schedule frequency matches, setting start time to saved schedules next occurrence: #{saved_schedule.next_occurrence.to_s(:seconds)}"
+          saved_schedule.next_occurrence
+        else
+          logger.info "| Schedule frequency does not match saved schedule frequency"
+          derive_start_time_from_frequency(frequency)
+        end
+      else
+        derive_start_time_from_frequency(frequency)
+      end
+    end
+
+    def derive_start_time_from_frequency(frequency)
+      logger.info "| Deriving start time from frequency"
+      current_time = Time.now
+      if frequency < 1.minute
+        logger.info "| Setting start time to beginning of current minute"
+        current_time.change(:sec => 0, :usec => 0)
+      elsif frequency < 1.hour
+        logger.info "| Setting start time to beginning of current hour"
+        current_time.change(:min => 0, :sec => 0, :usec => 0)
+      elsif frequency < 1.day
+        logger.info "| Setting start time to beginning of current day"
+        current_time.beginning_of_day
+      elsif frequency < 1.week
+        logger.info "| Setting start time to beginning of current week"
+        current_time.beginning_of_week
+      elsif frequency < 1.month
+        logger.info "| Setting start time to beginning of current month"
+        current_time.beginning_of_month
+      elsif frequency < 1.year
+        logger.info "| Setting start time to beginning of current year"
+        current_time.beginning_of_year
+      end
+    end
+
+    def every(frequency, key, options={}, &block)
+      logger.info "Adding Task: #{key}"
+      @tasks << Task.new(:name => key,
+                         :schedule => create_schedule(key, frequency, options[:start_time]),
+                         :action => block,
+                         :save => options[:save],
+                         :logger => logger)
+      logger.info "| #{key} added to Scheduler"
+    end
+
+    def next_task_time
+      tasks.map { |task| task.next_occurrence }.sort.first
+    end
+
+    def running_tasks
+      tasks.select do |task|
+        task.running?
+      end
+    end
+
+    def tasks_at_time(time)
+      tasks.select do |task|
+        task.next_occurrence == time
+      end
+    end
+
+    def self.define_frequencies(*frequencies)
+      frequencies.each do |frequency|
+        method_name = frequency == :day ? :daily? : :"#{frequency}ly?"
+        define_method(method_name) do |number|
+          (number % 1.send(frequency)) == 0
+        end
+      end
+    end
+    define_frequencies :year, :month, :week, :day, :hour, :minute, :second
+
+  end
+end

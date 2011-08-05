@@ -1,0 +1,14 @@
+$: << File.expand_path("#{File.dirname(__FILE__)}/../lib")
+require 'rubygems'
+require 'trollop'
+begin
+  require 'config/environment'
+rescue LoadError
+  require 'recurrent'
+end
+
+opts = Trollop::options do
+  opt :tasks_file, "File containing task definitions and configuration", :default => 'config/recurrences.rb'
+end
+
+Recurrent::Worker.new(opts[:tasks_file]).start
