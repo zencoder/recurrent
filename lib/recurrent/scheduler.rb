@@ -134,10 +134,6 @@ module Recurrent
       end
     end
 
-    def start_worker
-      Worker.new(self, logger).execute
-    end
-
     def tasks_at_time(time)
       tasks.select do |task|
         task.next_occurrence == time
