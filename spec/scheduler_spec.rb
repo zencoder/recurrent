@@ -6,43 +6,6 @@ module Recurrent
       Configuration.logging = "quiet"
     end
 
-    describe "#next_task_time" do
-      context "when there are multiple tasks" do
-        it "should return the soonest time at which a task is scheduled" do
-          task1 = stub('task1')
-          task1.stub(:next_occurrence).and_return(10.minutes.from_now)
-          task2 = stub('task2')
-          task2.stub(:next_occurrence).and_return(5.minutes.from_now)
-          task3 = stub('task3')
-          task3.stub(:next_occurrence).and_return(15.minutes.from_now)
-          schedule = Scheduler.new
-          schedule.tasks << task1
-          schedule.tasks << task2
-          schedule.tasks << task3
-          schedule.next_task_time.should == task2.next_occurrence
-        end
-      end
-    end
-
-    describe "#tasks_at_time" do
-      context "when there are multiple tasks" do
-        it "should return all the tasks whose next_occurrence is at the specified time" do
-          in_five_minutes = 5.minutes.from_now
-          task1 = stub('task1')
-          task1.stub(:next_occurrence).and_return(in_five_minutes)
-          task2 = stub('task2')
-          task2.stub(:next_occurrence).and_return(10.minutes.from_now)
-          task3 = stub('task3')
-          task3.stub(:next_occurrence).and_return(in_five_minutes)
-          schedule = Scheduler.new
-          schedule.tasks << task1
-          schedule.tasks << task2
-          schedule.tasks << task3
-          schedule.tasks_at_time(in_five_minutes).should =~ [task1, task3]
-        end
-      end
-    end
-
     describe "schedule creation methods" do
       before(:all) do
         @scheduler = Scheduler.new
@@ -230,6 +193,115 @@ module Recurrent
 
         after(:all) do
           Configuration.load_task_schedule = nil;
+        end
+      end
+    end
+
+    describe "#next_task_time" do
+      context "when there are multiple tasks" do
+        it "should return the soonest time at which a task is scheduled" do
+          task1 = stub('task1')
+          task1.stub(:next_occurrence).and_return(10.minutes.from_now)
+          task2 = stub('task2')
+          task2.stub(:next_occurrence).and_return(5.minutes.from_now)
+          task3 = stub('task3')
+          task3.stub(:next_occurrence).and_return(15.minutes.from_now)
+          schedule = Scheduler.new
+          schedule.tasks << task1
+          schedule.tasks << task2
+          schedule.tasks << task3
+          schedule.next_task_time.should == task2.next_occurrence
+        end
+      end
+    end
+
+    describe "#tasks_at_time" do
+      context "when there are multiple tasks" do
+        it "should return all the tasks whose next_occurrence is at the specified time" do
+          in_five_minutes = 5.minutes.from_now
+          task1 = stub('task1')
+          task1.stub(:next_occurrence).and_return(in_five_minutes)
+          task2 = stub('task2')
+          task2.stub(:next_occurrence).and_return(10.minutes.from_now)
+          task3 = stub('task3')
+          task3.stub(:next_occurrence).and_return(in_five_minutes)
+          schedule = Scheduler.new
+          schedule.tasks << task1
+          schedule.tasks << task2
+          schedule.tasks << task3
+          schedule.tasks_at_time(in_five_minutes).should =~ [task1, task3]
+        end
+      end
+    end
+
+    describe "methods created by .define_frequencies" do
+      before :all do
+        @scheduler = Scheduler.new
+      end
+
+      describe "#yearly?" do
+        it "should return true if a frequency is divisible by years" do
+          @scheduler.yearly?(3.years).should == true
+        end
+
+        it "should return false if a frequency is divisible by years" do
+          @scheduler.yearly?(3.days).should == false
+        end
+      end
+
+      describe "#monthly?" do
+        it "should return true if a frequency is divisible by months" do
+          @scheduler.monthly?(3.months).should == true
+        end
+
+        it "should return false if a frequency is not divisible by months" do
+          @scheduler.monthly?(3.days).should == false
+        end
+      end
+
+      describe "#weekly?" do
+        it "should return true if a frequency is divisible by weeks" do
+          @scheduler.weekly?(3.weeks).should == true
+        end
+
+        it "should return false if a frequency is not divisible by weeks" do
+          @scheduler.weekly?(3.days).should == false
+        end
+      end
+
+      describe "#daily?" do
+        it "should return true if a frequency is divisible by days" do
+          @scheduler.daily?(3.days).should == true
+        end
+
+        it "should return false if a frequency is not divisible by days" do
+          @scheduler.daily?(3.hours).should == false
+        end
+      end
+
+      describe "#hourly?" do
+        it "should return true if a frequency is divisible by hours" do
+          @scheduler.hourly?(3.hours).should == true
+        end
+
+        it "should return false if a frequency is not divisible by hours" do
+          @scheduler.hourly?(3.minutes).should == false
+        end
+      end
+
+      describe "#minutely?" do
+        it "should return true if a frequency is divisible by minutes" do
+          @scheduler.minutely?(3.minutes).should == true
+        end
+
+        it "should return false if a frequency is not divisible by years" do
+          @scheduler.minutely?(3.seconds).should == false
+        end
+      end
+
+      describe "#secondly?" do
+        it "should return true if a frequency is divisible by seconds" do
+          @scheduler.secondly?(3.years).should == true
         end
       end
     end
