@@ -20,17 +20,6 @@ module Recurrent
       end
     end
 
-    def execute_action_with_locking
-      result = Configuration.task_locking.call(:name => name, :action => action)
-      if result.task_ran?
-        logger.info "#{name}: Lock established, task completed."
-        return_value = result.task_return_value
-        save_results(return_value) if save?
-      else
-        logger.info "#{name}: Unable to establish a lock, task did not run."
-      end
-    end
-
     def handle_still_running(current_time)
       logger.info "#{name}: Execution from #{thread['execution_time'].to_s(:seconds)} still running, aborting this execution."
       if Configuration.handle_slow_task
