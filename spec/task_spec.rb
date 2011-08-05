@@ -33,5 +33,32 @@ module Recurrent
       end
     end
 
+    describe "#running?" do
+      describe "A task with a live thread" do
+        it "returns true" do
+          t = Task.new
+          t.thread = Thread.new { sleep 1 }
+          t.running?.should be_true
+        end
+      end
+
+      describe "A task with a dead thread" do
+        it "returns false" do
+          t = Task.new
+          t.thread = Thread.new { sleep 1 }
+          t.thread.kill
+          t.running?.should be_false
+        end
+      end
+
+      describe "A task with no thread" do
+        it "returns false" do
+          t = Task.new
+          t.thread = nil
+          t.running?.should be_false
+        end
+      end
+
+    end
   end
 end
