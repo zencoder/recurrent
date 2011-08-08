@@ -3,8 +3,20 @@ module Recurrent
 
     attr_accessor :scheduler, :logger
 
-    def initialize(task_file=nil)
-      @scheduler = Scheduler.new(task_file)
+    def initialize(options={})
+      file = options[:file]
+      @scheduler = Scheduler.new(file)
+      if options[:frequency]
+        if options[:ruby]
+          @scheduler.every(options[:frequency].send(:"#{options[:unit]}"), options[:name]) do
+            eval(options[:ruby])
+          end
+        elsif options[:system]
+          @scheduler.every(options[:frequency].send(:"#{options[:unit]}"), options[:name]) do
+            system(options[:system])
+          end
+        end
+      end
       @logger = scheduler.logger
     end
 
