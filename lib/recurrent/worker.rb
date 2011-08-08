@@ -105,7 +105,8 @@ module Recurrent
 
     def wait_until(time)
       until time.past?
-        sleep(0.5) unless $exit
+        break if $exit
+        sleep(0.5)
       end
     end
 
