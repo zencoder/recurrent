@@ -6,13 +6,14 @@ module Recurrent
     def initialize(options={})
       file = options[:file]
       @scheduler = Scheduler.new(file)
-      if options[:frequency]
+      if options[:every]
+        every = eval(options[:every]).to_i
         if options[:ruby]
-          @scheduler.every(options[:frequency].send(:"#{options[:unit]}"), options[:name]) do
+          @scheduler.every(every, options[:name]) do
             eval(options[:ruby])
           end
         elsif options[:system]
-          @scheduler.every(options[:frequency].send(:"#{options[:unit]}"), options[:name]) do
+          @scheduler.every(every, options[:name]) do
             system(options[:system])
           end
         end
