@@ -17,7 +17,8 @@ Usage Examples
     recurrent --help
 
 ###In your Rails app
-Add `gem "recurrent"` to your Gemfile
+Add `gem "recurrent"` to your Gemfile.
+
 When `recurrent` is used from the root of your Rails application it will execute its tasks in the context of your environment and have access to your application's classes and methods.
 
 Loading from a file
