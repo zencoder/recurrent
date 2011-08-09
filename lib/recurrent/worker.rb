@@ -61,7 +61,7 @@ module Recurrent
       lock_established = nil
       until lock_established
         break if $exit
-        lock_established = Configuration.process_locking.call('recurrent') do
+        lock_established = Configuration.process_locking.call do
           execute
         end
         break if $exit
