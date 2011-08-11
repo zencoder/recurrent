@@ -15,8 +15,13 @@ module Recurrent
       return handle_still_running(execution_time) if running?
       @thread = Thread.new do
         Thread.current["execution_time"] = execution_time
-        return_value = action.call
-        save_results(return_value) if save?
+        begin
+          return_value = action.call
+          save_results(return_value) if save?
+        rescue => e
+          logger.warn("#{name} - #{e.message}")
+          logger.warn(e.backtrace)
+        end
       end
     end
 
