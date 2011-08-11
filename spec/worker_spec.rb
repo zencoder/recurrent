@@ -41,5 +41,23 @@ module Recurrent
         Timecop.return
       end
     end
+
+    describe "setup" do
+      before :each do
+        Configuration.setup do
+          @setup = true
+        end
+      end
+
+      it "runs any configured setup when a worker is created" do
+        @setup.should == nil
+        Worker.new
+        @setup.should == true
+      end
+
+      after :each do
+        Configuration.setup = nil
+      end
+    end
   end
 end

@@ -4,6 +4,7 @@ module Recurrent
     attr_accessor :scheduler, :logger
 
     def initialize(options={})
+      Configuration.setup.call if Configuration.setup
       file = options[:file]
       @scheduler = Scheduler.new(file)
       if options[:every]
