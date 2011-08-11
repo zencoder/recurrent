@@ -41,48 +41,24 @@ module Recurrent
     end
 
     def create_schedule(name, frequency, start_time=nil)
-      logger.info "| Creating schedule"
-      if frequency.is_a? IceCube::Rule
-        logger.info "| Frequency is an IceCube Rule: #{frequency.to_s}"
-        rule = frequency
-        frequency_in_seconds = rule.frequency_in_seconds
+      saved_schedule = Configuration.load_task_schedule.call(name) if Configuration.load_task_schedule
+      new_schedule = frequency.is_a?(IceCube::Schedule) ? frequency : create_schedule_from_frequency(frequency, start_time)
+      if saved_schedule
+        use_saved_schedule_if_rules_match(saved_schedule, new_schedule)
       else
-        logger.info "| Frequency is an integer: #{frequency}"
-        rule = create_rule_from_frequency(frequency)
-        logger.info "| IceCube Rule created: #{rule.to_s}"
-        frequency_in_seconds = frequency
+        new_schedule
       end
-      start_time ||= derive_start_time(name, frequency_in_seconds)
+    end
+
+    def create_schedule_from_frequency(frequency, start_time=nil)
+      logger.info "| Frequency is an integer: #{frequency}"
+      rule = create_rule_from_frequency(frequency)
+      logger.info "| IceCube Rule created: #{rule.to_s}"
+      frequency_in_seconds = frequency
+      start_time ||= derive_start_time_from_frequency(frequency_in_seconds)
       schedule = IceCube::Schedule.new(start_time)
       schedule.add_recurrence_rule rule
-      logger.info "| schedule created"
       schedule
-    end
-
-    def derive_start_time(name, frequency)
-      logger.info "| No start time provided, deriving one."
-      if Configuration.load_task_schedule
-        logger.info "| Attempting to derive from saved schedule"
-        derive_start_time_from_saved_schedule(name, frequency)
-      else
-        derive_start_time_from_frequency(frequency)
-      end
-    end
-
-    def derive_start_time_from_saved_schedule(name, frequency)
-      saved_schedule = Configuration.load_task_schedule.call(name)
-      if saved_schedule
-        logger.info "| Saved schedule found"
-        if saved_schedule.rrules.first.frequency_in_seconds == frequency
-          logger.info "| Saved schedule frequency matches, setting start time to saved schedules next occurrence: #{saved_schedule.next_occurrence.to_s(:seconds)}"
-          saved_schedule.next_occurrence
-        else
-          logger.info "| Schedule frequency does not match saved schedule frequency"
-          derive_start_time_from_frequency(frequency)
-        end
-      else
-        derive_start_time_from_frequency(frequency)
-      end
     end
 
     def derive_start_time_from_frequency(frequency)
@@ -132,6 +108,16 @@ module Recurrent
     def tasks_at_time(time)
       tasks.select do |task|
         task.next_occurrence == time
+      end
+    end
+
+    def use_saved_schedule_if_rules_match(saved_schedule, new_schedule)
+      if new_schedule.has_same_rules? saved_schedule
+        logger.info "| Schedule matches a saved schedule, using saved schedule."
+        saved_schedule.start_date = saved_schedule.next_occurrence
+        saved_schedule
+      else
+        new_schedule
       end
     end
 

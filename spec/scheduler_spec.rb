@@ -55,17 +55,16 @@ module Recurrent
         end
       end
 
-      describe "create_schedule" do
-        context "when frequency is an IceCube Rule" do
-          subject do
+      describe "#create_schedule" do
+        context "when frequency is an IceCube::Schedule" do
+          before :each do
             rule = IceCube::Rule.daily(1)
-            @scheduler.create_schedule(:test, rule)
+            @schedule = IceCube::Schedule.new(Time.now)
+            @schedule.add_recurrence_rule rule
           end
-          it "should be a schedule" do
-            subject.class.should == IceCube::Schedule
-          end
-          it "should have the correct rule" do
-            subject.rrules.first.is_a? IceCube::DailyRule
+
+          it "returns the schedule" do
+            @scheduler.create_schedule(:test, @schedule).should == @schedule
           end
         end
 
@@ -83,7 +82,7 @@ module Recurrent
 
         context "when start time is not provided" do
           it "should derive its own start time" do
-            @scheduler.should_receive(:derive_start_time)
+            @scheduler.should_receive(:derive_start_time_from_frequency).with(1.day)
             @scheduler.create_schedule(:test, 1.day)
           end
         end
@@ -96,7 +95,7 @@ module Recurrent
         end
       end
 
-      describe "derive_start_time_from_frequency" do
+      describe "#derive_start_time_from_frequency" do
         context "when the current time is 11:35:12 am on July 26th, 2011" do
           before(:all) do
             Timecop.freeze(Time.local(2011, 7, 26, 11, 35, 12))
@@ -150,30 +149,26 @@ module Recurrent
         end
       end
 
-      describe "derive_start_time_from_saved_schedule" do
+      describe "A schedule has a saved schedule" do
         before(:all) do
           @scheduler = Scheduler.new
           Configuration.load_task_schedule do |name|
-            current_time = Time.new
-            current_time.change(:sec => 0, :usec => 0)
-            @scheduler.create_schedule(:test, 10.seconds, current_time) if name == :test
+            if name == :test
+              current_time = Time.new
+              current_time.change(:sec => 0, :usec => 0)
+              schedule = IceCube::Schedule.new(current_time)
+              schedule.add_recurrence_rule IceCube::SecondlyRule.new(10)
+              schedule
+            end
           end
         end
 
         describe "a schedule being created with a saved schedule with the same name and frequency" do
-          it "derives its start time from the saved schedule" do
-            @scheduler.should_not_receive(:derive_start_time_from_frequency)
-            @scheduler.create_schedule(:test, 10.seconds)
+          it "should return the saved schedule with its start time updated to be its next_occurrence" do
+            saved_schedule = Configuration.load_task_schedule.call(:test)
+            created_schedule = @scheduler.create_schedule(:test, 10.seconds)
+            created_schedule.start_date.to_s(:seconds).should == saved_schedule.next_occurrence.to_s(:seconds)
           end
-
-          describe "the created schedule's start time" do
-            it "should be the next occurrence of the saved schedule" do
-              saved_schedule = Configuration.load_task_schedule.call(:test)
-              created_schedule = @scheduler.create_schedule(:test, 10.seconds)
-              created_schedule.start_date.to_s(:seconds).should == saved_schedule.next_occurrence.to_s(:seconds)
-            end
-          end
-
         end
 
         describe "a schedule being created with a saved schedule with the same name and different frequency" do

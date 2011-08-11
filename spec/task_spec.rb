@@ -48,22 +48,21 @@ module Recurrent
 
     describe "#next_occurrence" do
       context "a task that occurs ever 10 seconds and has just occurred" do
-        subject do
-          current_time = Time.new
-          current_time.change(:sec => 0, :usec => 0)
-          Timecop.freeze(current_time)
-          Task.new(:name => :test, :schedule => Scheduler.new.create_schedule(:test, 10.seconds, current_time))
+        before :each do
+          @current_time = Time.new
+          @current_time.change(:sec => 0, :usec => 0)
+          Timecop.freeze(@current_time)
+          @task = Task.new(:name => :test, :schedule => Scheduler.new.create_schedule(:test, 10.seconds, @current_time))
         end
 
         it "should occur 10 seconds from now" do
-          subject.next_occurrence.should == 10.seconds.from_now
+          @task.next_occurrence.should == 10.seconds.from_now
         end
 
-        it "should cache its next occurrence while it's still valid" do
-          subject.schedule.should_receive(:next_occurrence).and_return(10.seconds.from_now)
-          subject.next_occurrence
-          subject.schedule.should_not_receive(:next_occurrence)
-          subject.next_occurrence
+        it "update the start time of the task to the time of this occurrence because IceCube::Schedule#next_occurrence gets progressively slower the farther back the start time is" do
+          @task.schedule.start_date.should == @current_time
+          @task.next_occurrence.should == 10.seconds.from_now
+          @task.schedule.start_date.should == 10.seconds.from_now
         end
 
         after(:each) do
