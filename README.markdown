@@ -35,7 +35,7 @@ Use the every method to create tasks.
     end
 
 ####Frequency
-  The first argument is the frequency, it can be an integer in seconds, including ActiveSupport style 2.hours, 3.weeks etc, or an [IceCube::Rule](http://seejohncode.com/ice_cube/)
+  The first argument is the frequency, it can be an integer in seconds, including ActiveSupport style 2.hours, 3.weeks etc, or an [IceCube::Schedule](http://seejohncode.com/ice_cube/)
 ####Name
   The second argument is the name of the task
 ####Options
