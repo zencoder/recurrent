@@ -16,7 +16,12 @@ module Recurrent
       @thread = Thread.new do
         Thread.current["execution_time"] = execution_time
         begin
-          return_value = action.call
+          if Configuration.load_task_return_value && action.arity == 1
+            previous_value = Configuration.load_task_return_value.call(name)
+            return_value = action.call(previous_value)
+          else
+            return_value = action.call
+          end
           save_results(return_value) if save?
         rescue => e
           logger.warn("#{name} - #{e.message}")

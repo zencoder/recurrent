@@ -10,7 +10,7 @@ module Recurrent
       before :each do
         @executing_task_time = 5.minutes.ago
         @current_time = Time.now
-        @task = Task.new :name => 'execute test', :logger => Logger.new('some identifier')
+        @task = Task.new :name => 'execute test', :logger => Logger.new('some identifier'), :action => proc { 'blah' }
       end
 
       context "The task is still running a previous execution" do
@@ -40,10 +40,45 @@ module Recurrent
         @task.thread['execution_time'].should == @current_time
       end
 
-      it "calls the action" do
-        @task.action.should_receive(:call)
-        @task.execute(@current_time)
+      context "load_task_return_value is configured" do
+        before :each do
+          Configuration.load_task_return_value do
+            "testing"
+          end
+        end
+
+        context "the action doesn't take an argument" do
+          it "calls the action with a nil argument" do
+            @task.action.should_receive(:call)
+            @task.execute(@current_time)
+          end
+        end
+
+        context "the action takes an argument" do
+          before :each do
+            @task.action = proc { |previous_value| "derp" }
+          end
+
+          it "loads the task return value and calls the action with it as an argument" do
+            @task.action.should_receive(:call).with("testing")
+            @task.execute(@current_time)
+          end
+
+          after :each do
+            @task.action = proc { "derp" }
+          end
+        end
+        after :each do
+          Configuration.load_task_return_value = nil
+        end
       end
+
+      context "load_task_return_value is not configured" do
+
+      end
+
+
+
     end
 
     describe "#next_occurrence" do
