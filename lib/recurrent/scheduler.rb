@@ -105,10 +105,21 @@ module Recurrent
       end
     end
 
-    def tasks_at_time(time)
-      tasks.select do |task|
+    def tasks_at_time(time, opts={})
+      current_tasks = tasks.select do |task|
         task.next_occurrence == time
       end
+
+      if opts[:sort_by_frequency]
+        current_tasks.sort_by do |task|
+          task.schedule.rrules.sort_by do |rule|
+            rule.frequency_in_seconds
+          end.first.frequency_in_seconds
+        end
+      else
+        current_tasks
+      end
+
     end
 
     def use_saved_schedule_if_rules_match(saved_schedule, new_schedule)

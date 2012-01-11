@@ -213,18 +213,63 @@ module Recurrent
     describe "#tasks_at_time" do
       context "when there are multiple tasks" do
         it "should return all the tasks whose next_occurrence is at the specified time" do
-          in_five_minutes = 5.minutes.from_now
-          task1 = stub('task1')
-          task1.stub(:next_occurrence).and_return(in_five_minutes)
-          task2 = stub('task2')
-          task2.stub(:next_occurrence).and_return(10.minutes.from_now)
-          task3 = stub('task3')
-          task3.stub(:next_occurrence).and_return(in_five_minutes)
-          schedule = Scheduler.new
-          schedule.tasks << task1
-          schedule.tasks << task2
-          schedule.tasks << task3
-          schedule.tasks_at_time(in_five_minutes).should =~ [task1, task3]
+          task_1_schedule = IceCube::Schedule.new(Time.utc(2012, 1, 10))
+          task_1_schedule.add_recurrence_rule(IceCube::Rule.minutely(10))
+
+          task_2_schedule = IceCube::Schedule.new(Time.utc(2012, 1, 10))
+          task_2_schedule.add_recurrence_rule(IceCube::Rule.minutely(5))
+
+          task_3_schedule = IceCube::Schedule.new(Time.utc(2012, 1, 10))
+          task_3_schedule.add_recurrence_rule(IceCube::Rule.minutely(1))
+
+          current_time = Time.utc(2012, 1, 10, 14, 4)
+          Timecop.freeze(current_time)
+
+          task1 = Task.new(:name => 'task1',
+                           :schedule => task_1_schedule)
+          task2 = Task.new(:name => 'task2',
+                           :schedule => task_2_schedule)
+          task3 = Task.new(:name => 'task3',
+                           :schedule => task_3_schedule)
+          scheduler = Scheduler.new
+          scheduler.tasks << task1
+          scheduler.tasks << task2
+          scheduler.tasks << task3
+
+          scheduler.tasks_at_time(Time.utc(2012, 1, 10, 14, 5)).should =~ [task2, task3]
+          Timecop.return
+        end
+
+        context "when :sort_by_frequency => true is passed as an option" do
+          it "should return the sorted by frequency, most frequent first" do
+            task_1_schedule = IceCube::Schedule.new(Time.utc(2012, 1, 10))
+            task_1_schedule.add_recurrence_rule(IceCube::Rule.minutely(10))
+
+            task_2_schedule = IceCube::Schedule.new(Time.utc(2012, 1, 10))
+            task_2_schedule.add_recurrence_rule(IceCube::Rule.minutely(5))
+
+            task_3_schedule = IceCube::Schedule.new(Time.utc(2012, 1, 10))
+            task_3_schedule.add_recurrence_rule(IceCube::Rule.minutely(1))
+
+            current_time = Time.utc(2012, 1, 10, 14, 4)
+            Timecop.freeze(current_time)
+
+            task1 = Task.new(:name => 'task1',
+                             :schedule => task_1_schedule)
+            task2 = Task.new(:name => 'task2',
+                             :schedule => task_2_schedule)
+            task3 = Task.new(:name => 'task3',
+                             :schedule => task_3_schedule)
+            scheduler = Scheduler.new
+            scheduler.tasks << task1
+            scheduler.tasks << task2
+            scheduler.tasks << task3
+
+            first_task, second_task = *scheduler.tasks_at_time(Time.utc(2012, 1, 10, 14, 5), :sort_by_frequency => true)
+            first_task.should == task3
+            second_task.should == task2
+            Timecop.return
+          end
         end
       end
     end
