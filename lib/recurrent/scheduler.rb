@@ -135,6 +135,19 @@ module Recurrent
       end
     end
 
+    def increment_executing_tasks
+      mutex.synchronize do
+        @executing_tasks += 1
+      end
+      @executing_tasks
+    end
+
+    def decrement_executing_tasks
+      mutex.synchronize do
+       @executing_tasks -= 1
+      end
+    end
+
     def self.define_frequencies(*frequencies)
       frequencies.each do |frequency|
         method_name = frequency == :day ? :daily? : :"#{frequency}ly?"

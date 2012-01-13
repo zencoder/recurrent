@@ -26,7 +26,7 @@ module Recurrent
             call_action
           end
         rescue TooManyExecutingTasks
-          decrement_executing_tasks
+          scheduler.decrement_executing_tasks
           sleep(0.1)
           retry
         rescue => e
@@ -37,28 +37,11 @@ module Recurrent
     end
 
     def limit_execution_to_max_concurrency
-      if increment_executing_tasks <= Configuration.maximum_concurrent_tasks
+      if scheduler.increment_executing_tasks <= Configuration.maximum_concurrent_tasks
         call_action
-        decrement_executing_tasks
+        scheduler.decrement_executing_tasks
       else
         raise TooManyExecutingTasks
-      end
-    end
-
-    def increment_executing_tasks
-      executing_tasks = nil
-      scheduler.mutex.synchronize do
-        scheduler.executing_tasks += 1
-        executing_tasks = scheduler.executing_tasks
-      end
-      executing_tasks
-    end
-
-    def decrement_executing_tasks
-      if scheduler
-        scheduler.mutex.synchronize do
-         scheduler.executing_tasks -= 1
-        end
       end
     end
 
