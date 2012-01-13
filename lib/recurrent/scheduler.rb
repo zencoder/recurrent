@@ -1,12 +1,14 @@
 module Recurrent
   class Scheduler
 
-    attr_accessor :tasks, :logger
+    attr_accessor :tasks, :logger, :executing_tasks, :mutex
 
     def initialize(task_file=nil)
       @tasks = []
       identifier = "host:#{Socket.gethostname} pid:#{Process.pid}" rescue "pid:#{Process.pid}"
       @logger = Logger.new(identifier)
+      @mutex = Mutex.new
+      @executing_tasks = 0
       eval(File.read(task_file)) if task_file
     end
 
@@ -91,7 +93,8 @@ module Recurrent
                          :schedule => create_schedule(key, frequency, options[:start_time]),
                          :action => block,
                          :save => options[:save],
-                         :logger => logger)
+                         :logger => logger,
+                         :scheduler => self)
       logger.info "| #{key} added to Scheduler"
     end
 

@@ -219,7 +219,62 @@ module Recurrent
           t.running?.should be_false
         end
       end
-
     end
+
+    describe "Restricting to a maximum number of concurrent tasks" do
+      before(:each) do
+        scheduler = Scheduler.new
+        @task1 = Task.new(:name => 'task1',
+                         :scheduler => scheduler,
+                         :action => lambda { sleep(1)})
+        @task2 = Task.new(:name => 'task2',
+                         :scheduler => scheduler,
+                         :action => lambda { sleep(1) })
+
+        scheduler.tasks << @task1
+        scheduler.tasks << @task2
+      end
+
+      describe "when there is no concurrent task limit set" do
+        it "should run all tasks at the same time" do
+          current_time = Time.now
+          [@task1, @task2].each do |task|
+            task.execute(current_time)
+          end
+
+          [@task1, @task2].each {|task| task.thread.join }
+
+          finished_at = Time.now
+          elapsed = finished_at - current_time
+
+          elapsed.round.should == 1.seconds
+        end
+      end
+
+      describe "when there is a maximum concurrency limit set" do
+        before(:each) do
+          Configuration.maximum_concurrent_tasks = 1
+        end
+
+        it "should run only up to the number of tasks specified at once" do
+          current_time = Time.now
+          [@task1, @task2].each do |task|
+            task.execute(current_time)
+          end
+
+          [@task1, @task2].each {|task| task.thread.join }
+
+          finished_at = Time.now
+          elapsed = finished_at - current_time
+
+          elapsed.round.should == 2.seconds
+        end
+
+        after(:each) do
+          Configuration.maximum_concurrent_tasks = nil
+        end
+      end
+    end
+
   end
 end
