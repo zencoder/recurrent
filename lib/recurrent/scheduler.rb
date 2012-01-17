@@ -89,28 +89,51 @@ module Recurrent
 
     def every(frequency, key, options={}, &block)
       logger.info "Adding Task: #{key}"
-      @tasks << Task.new(:name => key,
-                         :schedule => create_schedule(key, frequency, options[:start_time]),
-                         :action => block,
-                         :save => options[:save],
-                         :logger => logger,
-                         :scheduler => self)
+      task = Task.new(:name => key,
+                      :schedule => create_schedule(key, frequency, options[:start_time]),
+                      :action => block,
+                      :save => options[:save],
+                      :logger => logger,
+                      :scheduler => self)
+      add_or_update_task(task)
       logger.info "| #{key} added to Scheduler"
     end
 
+    def add_or_update_task(new_task)
+      mutex.synchronize do
+        old_task_index = tasks.index {|task| task.name == new_task.name }
+        if old_task_index
+          tasks[old_task_index].schedule = new_task.schedule
+          tasks[old_task_index].action = new_task.action
+        else
+          @tasks << new_task
+        end
+      end
+    end
+
+    def remove_task(name)
+      mutex.synchronize do
+        @tasks.reject! {|task| task.name == name }
+      end
+    end
+
     def next_task_time
-      tasks.map { |task| task.next_occurrence }.sort.first
+      mutex.synchronize do
+        tasks.map { |task| task.next_occurrence }.sort.first
+      end
     end
 
     def running_tasks
-      tasks.select do |task|
-        task.running?
+      mutex.synchronize do
+        tasks.select {|task| task.running? }
       end
     end
 
     def tasks_at_time(time, opts={})
-      current_tasks = tasks.select do |task|
-        task.next_occurrence == time
+      current_tasks = []
+
+      mutex.synchronize do
+        current_tasks = tasks.select {|task| task.next_occurrence == time }
       end
 
       if opts[:sort_by_frequency]
