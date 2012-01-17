@@ -129,7 +129,7 @@ module Recurrent
 
         it "logs that the task is still running and calls the method" do
           @task.logger.should_receive(:info).with("handle_still_running_test: Execution from #{@executing_task_time.to_s(:seconds)} still running, aborting this execution.")
-          Configuration.handle_slow_task.should_receive(:call).with('handle_still_running_test', @current_time)
+          Configuration.handle_slow_task.should_receive(:call).with('handle_still_running_test', @current_time, @executing_task_time)
           @task.handle_still_running(@current_time)
         end
 

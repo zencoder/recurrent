@@ -58,7 +58,7 @@ module Recurrent
     def handle_still_running(current_time)
       logger.info "#{name}: Execution from #{thread['execution_time'].to_s(:seconds)} still running, aborting this execution."
       if Configuration.handle_slow_task
-        Configuration.handle_slow_task.call(name, current_time)
+        Configuration.handle_slow_task.call(name, current_time, thread['execution_time'])
       end
     end
 
