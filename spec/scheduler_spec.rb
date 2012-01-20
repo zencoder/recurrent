@@ -210,6 +210,74 @@ module Recurrent
       end
     end
 
+    describe "#add_or_update_task" do
+      before(:each) do
+        @scheduler = Scheduler.new
+      end
+
+      context "when adding a new task" do
+        before(:each) do
+          @task = Task.new(:name => :new_task)
+        end
+
+        it "adds the task to the list of tasks" do
+          @scheduler.tasks.size.should == 0
+          @scheduler.add_or_update_task(@task)
+          @scheduler.tasks.size.should == 1
+          @scheduler.tasks.first.should == @task
+        end
+      end
+
+      context "when updating a task" do
+        before(:each) do
+          @original_frequency = @scheduler.create_schedule(:task, 5.seconds)
+          @original_action = proc { "I am the original task!" }
+          @original_task = Task.new(:name => :task,
+                                    :frequency => @original_frequency,
+                                    :action => @original_action)
+
+          @new_frequency = @scheduler.create_schedule(:task, 10.seconds)
+          @new_action = proc { "I am the new task!" }
+          @new_task = Task.new(:name => :task,
+                                        :frequency => @new_frequency,
+                                        :action => @new_action)
+          @scheduler.tasks << @original_task
+        end
+
+        context "before updating the task" do
+          it "has one task" do
+            @scheduler.tasks.size.should == 1
+          end
+
+          it "has the original task's action" do
+            @scheduler.tasks.first.action.call.should == "I am the original task!"
+          end
+
+          it "has the original task's frequency" do
+            @scheduler.tasks.first.schedule.should == @original_schedule
+          end
+        end
+
+        context "after updating the task" do
+          before(:each) do
+            @scheduler.add_or_update_task(@new_task)
+          end
+
+          it "has one task" do
+            @scheduler.tasks.size.should == 1
+          end
+
+          it "has the original task's action" do
+            @scheduler.tasks.first.action.call.should == "I am the new task!"
+          end
+
+          it "has the original task's frequency" do
+            @scheduler.tasks.first.schedule.should == @new_schedule
+          end
+        end
+      end
+    end
+
     describe "#tasks_at_time" do
       context "when there are multiple tasks" do
         it "should return all the tasks whose next_occurrence is at the specified time" do
