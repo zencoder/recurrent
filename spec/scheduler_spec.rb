@@ -267,12 +267,42 @@ module Recurrent
             @scheduler.tasks.size.should == 1
           end
 
-          it "has the original task's action" do
+          it "has the new task's action" do
             @scheduler.tasks.first.action.call.should == "I am the new task!"
           end
 
-          it "has the original task's frequency" do
+          it "has the new task's frequency" do
             @scheduler.tasks.first.schedule.should == @new_schedule
+          end
+        end
+      end
+    end
+
+    describe "#remove_task" do
+      context "A scheduler with 3 tasks" do
+        before(:each) do
+          @scheduler = Scheduler.new
+          @task1 = Task.new(:name => :task1)
+          @task2 = Task.new(:name => :task2)
+          @task3 = Task.new(:name => :task3)
+          @scheduler.add_or_update_task(@task1)
+          @scheduler.add_or_update_task(@task2)
+          @scheduler.add_or_update_task(@task3)
+        end
+
+        it "has 3 tasks" do
+          @scheduler.tasks.size.should == 3
+          @scheduler.tasks.should == [@task1, @task2, @task3]
+        end
+
+        context "that removes a task" do
+          before(:each) do
+            @scheduler.remove_task(:task2)
+          end
+
+          it "has 2 tasks" do
+            @scheduler.tasks.size.should == 2
+            @scheduler.tasks.should == [@task1, @task3]
           end
         end
       end
