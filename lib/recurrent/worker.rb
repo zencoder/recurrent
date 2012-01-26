@@ -49,7 +49,7 @@ module Recurrent
 
         wait_for_running_tasks && break if $exit
 
-        tasks_to_execute.each do |task|
+        tasks_to_execute(:sort_by_frequency => !!Configuration.maximum_concurrent_tasks).each do |task|
           logger.info "#{task.name}: Executing at #{execution_time.to_s(:seconds)}"
           task.execute(execution_time)
         end
