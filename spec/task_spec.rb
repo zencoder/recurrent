@@ -231,8 +231,8 @@ module Recurrent
                          :scheduler => scheduler,
                          :action => lambda { sleep(1) })
 
-        scheduler.tasks << @task1
-        scheduler.tasks << @task2
+        scheduler.tasks.add_or_update(@task1)
+        scheduler.tasks.add_or_update(@task2)
       end
 
       describe "when there is no concurrent task limit set" do

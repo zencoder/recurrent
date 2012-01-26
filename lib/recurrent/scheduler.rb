@@ -4,7 +4,7 @@ module Recurrent
     attr_accessor :tasks, :logger, :executing_tasks, :mutex
 
     def initialize(task_file=nil)
-      @tasks = []
+      @tasks = TaskCollection.new
       identifier = "host:#{Socket.gethostname} pid:#{Process.pid}" rescue "pid:#{Process.pid}"
       @logger = Logger.new(identifier)
       @mutex = Mutex.new
@@ -95,57 +95,8 @@ module Recurrent
                       :save => options[:save],
                       :logger => logger,
                       :scheduler => self)
-      add_or_update_task(task)
+      @tasks.add_or_update_task(task)
       logger.info "| #{key} added to Scheduler"
-    end
-
-    def add_or_update_task(new_task)
-      mutex.synchronize do
-        old_task_index = tasks.index {|task| task.name == new_task.name }
-        if old_task_index
-          tasks[old_task_index].schedule = new_task.schedule
-          tasks[old_task_index].action = new_task.action
-        else
-          @tasks << new_task
-        end
-      end
-    end
-
-    def remove_task(name)
-      mutex.synchronize do
-        @tasks.reject! {|task| task.name == name }
-      end
-    end
-
-    def next_task_time
-      mutex.synchronize do
-        tasks.map { |task| task.next_occurrence }.sort.first
-      end
-    end
-
-    def running_tasks
-      mutex.synchronize do
-        tasks.select {|task| task.running? }
-      end
-    end
-
-    def tasks_at_time(time, opts={})
-      current_tasks = []
-
-      mutex.synchronize do
-        current_tasks = tasks.select {|task| task.next_occurrence == time }
-      end
-
-      if opts[:sort_by_frequency]
-        current_tasks.sort_by do |task|
-          task.schedule.rrules.sort_by do |rule|
-            rule.frequency_in_seconds
-          end.first.frequency_in_seconds
-        end
-      else
-        current_tasks
-      end
-
     end
 
     def use_saved_schedule_if_rules_match(saved_schedule, new_schedule)
@@ -162,7 +113,6 @@ module Recurrent
       mutex.synchronize do
         @executing_tasks += 1
       end
-      @executing_tasks
     end
 
     def decrement_executing_tasks

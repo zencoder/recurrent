@@ -95,7 +95,7 @@ module Recurrent
     end
 
     def wait_for_running_tasks_indefinitely
-      if task = scheduler.running_tasks.first
+      if task = scheduler.tasks.running.first
         logger.info "Waiting for #{task.name} to finish."
         task.thread.try(:join)
         wait_for_running_tasks_indefinitely

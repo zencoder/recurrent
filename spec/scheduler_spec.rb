@@ -195,17 +195,17 @@ module Recurrent
     describe "#next_task_time" do
       context "when there are multiple tasks" do
         it "should return the soonest time at which a task is scheduled" do
-          task1 = stub('task1')
+          task1 = stub('task1', :name => :task1)
           task1.stub(:next_occurrence).and_return(10.minutes.from_now)
-          task2 = stub('task2')
+          task2 = stub('task2', :name => :task2)
           task2.stub(:next_occurrence).and_return(5.minutes.from_now)
-          task3 = stub('task3')
+          task3 = stub('task3', :name => :task3)
           task3.stub(:next_occurrence).and_return(15.minutes.from_now)
           schedule = Scheduler.new
-          schedule.tasks << task1
-          schedule.tasks << task2
-          schedule.tasks << task3
-          schedule.next_task_time.should == task2.next_occurrence
+          schedule.tasks.add_or_update(task1)
+          schedule.tasks.add_or_update(task2)
+          schedule.tasks.add_or_update(task3)
+          schedule.tasks.next_execution_time.should == task2.next_occurrence
         end
       end
     end
@@ -222,7 +222,7 @@ module Recurrent
 
         it "adds the task to the list of tasks" do
           @scheduler.tasks.size.should == 0
-          @scheduler.add_or_update_task(@task)
+          @scheduler.tasks.add_or_update(@task)
           @scheduler.tasks.size.should == 1
           @scheduler.tasks.first.should == @task
         end
@@ -260,7 +260,7 @@ module Recurrent
 
         context "after updating the task" do
           before(:each) do
-            @scheduler.add_or_update_task(@new_task)
+            @scheduler.tasks.add_or_update(@new_task)
           end
 
           it "has one task" do
@@ -285,24 +285,24 @@ module Recurrent
           @task1 = Task.new(:name => :task1)
           @task2 = Task.new(:name => :task2)
           @task3 = Task.new(:name => :task3)
-          @scheduler.add_or_update_task(@task1)
-          @scheduler.add_or_update_task(@task2)
-          @scheduler.add_or_update_task(@task3)
+          @scheduler.tasks.add_or_update(@task1)
+          @scheduler.tasks.add_or_update(@task2)
+          @scheduler.tasks.add_or_update(@task3)
         end
 
         it "has 3 tasks" do
           @scheduler.tasks.size.should == 3
-          @scheduler.tasks.should == [@task1, @task2, @task3]
+          (@scheduler.tasks | []).should == [@task1, @task2, @task3]
         end
 
         context "that removes a task" do
           before(:each) do
-            @scheduler.remove_task(:task2)
+            @scheduler.tasks.remove(:task2)
           end
 
           it "has 2 tasks" do
             @scheduler.tasks.size.should == 2
-            @scheduler.tasks.should == [@task1, @task3]
+            (@scheduler.tasks | []).should == [@task1, @task3]
           end
         end
       end
@@ -330,11 +330,11 @@ module Recurrent
           task3 = Task.new(:name => 'task3',
                            :schedule => task_3_schedule)
           scheduler = Scheduler.new
-          scheduler.tasks << task1
-          scheduler.tasks << task2
-          scheduler.tasks << task3
+          scheduler.tasks.add_or_update(task1)
+          scheduler.tasks.add_or_update(task2)
+          scheduler.tasks.add_or_update(task3)
 
-          scheduler.tasks_at_time(Time.utc(2012, 1, 10, 14, 5)).should =~ [task2, task3]
+          scheduler.tasks.scheduled_to_execute_at(Time.utc(2012, 1, 10, 14, 5)).should =~ [task2, task3]
           Timecop.return
         end
 
@@ -359,11 +359,11 @@ module Recurrent
             task3 = Task.new(:name => 'task3',
                              :schedule => task_3_schedule)
             scheduler = Scheduler.new
-            scheduler.tasks << task1
-            scheduler.tasks << task2
-            scheduler.tasks << task3
+            scheduler.tasks.add_or_update(task1)
+            scheduler.tasks.add_or_update(task2)
+            scheduler.tasks.add_or_update(task3)
 
-            first_task, second_task = *scheduler.tasks_at_time(Time.utc(2012, 1, 10, 14, 5), :sort_by_frequency => true)
+            first_task, second_task = *scheduler.tasks.scheduled_to_execute_at(Time.utc(2012, 1, 10, 14, 5), :sort_by_frequency => true)
             first_task.should == task3
             second_task.should == task2
             Timecop.return
