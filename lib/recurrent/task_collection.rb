@@ -51,9 +51,9 @@ module Recurrent
       end
     end
 
-    def method_missing(id, *args)
+    def method_missing(id, *args, &block)
       @mutex.synchronize do
-        @tasks.send(id, *args)
+        @tasks.send(id, *args, &block)
       end
     end
   end
