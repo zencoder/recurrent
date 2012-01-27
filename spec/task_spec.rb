@@ -72,13 +72,6 @@ module Recurrent
           Configuration.load_task_return_value = nil
         end
       end
-
-      context "load_task_return_value is not configured" do
-
-      end
-
-
-
     end
 
     describe "#next_occurrence" do
@@ -129,7 +122,7 @@ module Recurrent
 
         it "logs that the task is still running and calls the method" do
           @task.logger.should_receive(:info).with("handle_still_running_test: Execution from #{@executing_task_time.to_s(:seconds)} still running, aborting this execution.")
-          Configuration.handle_slow_task.should_receive(:call).with('handle_still_running_test', @current_time)
+          Configuration.handle_slow_task.should_receive(:call).with('handle_still_running_test', @current_time, @executing_task_time)
           @task.handle_still_running(@current_time)
         end
 
@@ -219,7 +212,66 @@ module Recurrent
           t.running?.should be_false
         end
       end
-
     end
+
+    describe "Restricting to a maximum number of concurrent tasks" do
+      before(:each) do
+        scheduler = Scheduler.new
+        schedule = IceCube::Schedule.new(Time.now.utc.beginning_of_day)
+        schedule.add_recurrence_rule IceCube::Rule.minutely(1)
+        @task1 = Task.new(:name => 'task1',
+                         :scheduler => scheduler,
+                         :schedule => schedule.clone,
+                         :action => lambda { sleep(1)})
+        @task2 = Task.new(:name => 'task2',
+                         :scheduler => scheduler,
+                         :schedule => schedule.clone,
+                         :action => lambda { sleep(1) })
+
+        scheduler.tasks.add_or_update(@task1)
+        scheduler.tasks.add_or_update(@task2)
+      end
+
+      describe "when there is no concurrent task limit set" do
+        it "should run all tasks at the same time" do
+          current_time = Time.now
+          [@task1, @task2].each do |task|
+            task.execute(current_time)
+          end
+
+          [@task1, @task2].each {|task| task.thread.join }
+
+          finished_at = Time.now
+          elapsed = finished_at - current_time
+
+          elapsed.round.should == 1.seconds
+        end
+      end
+
+      describe "when there is a maximum concurrency limit set" do
+        before(:each) do
+          Configuration.maximum_concurrent_tasks = 1
+        end
+
+        it "should run only up to the number of tasks specified at once" do
+          current_time = Time.now
+          [@task1, @task2].each do |task|
+            task.execute(current_time)
+          end
+
+          [@task1, @task2].each {|task| task.thread.join }
+
+          finished_at = Time.now
+          elapsed = finished_at - current_time
+
+          elapsed.round.should == 2.seconds
+        end
+
+        after(:each) do
+          Configuration.maximum_concurrent_tasks = nil
+        end
+      end
+    end
+
   end
 end

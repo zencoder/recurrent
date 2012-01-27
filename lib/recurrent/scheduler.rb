@@ -1,12 +1,14 @@
 module Recurrent
   class Scheduler
 
-    attr_accessor :tasks, :logger
+    attr_accessor :tasks, :logger, :executing_tasks, :mutex
 
     def initialize(task_file=nil)
-      @tasks = []
+      @tasks = TaskCollection.new
       identifier = "host:#{Socket.gethostname} pid:#{Process.pid}" rescue "pid:#{Process.pid}"
       @logger = Logger.new(identifier)
+      @mutex = Mutex.new
+      @executing_tasks = 0
       eval(File.read(task_file)) if task_file
     end
 
@@ -87,28 +89,14 @@ module Recurrent
 
     def every(frequency, key, options={}, &block)
       logger.info "Adding Task: #{key}"
-      @tasks << Task.new(:name => key,
-                         :schedule => create_schedule(key, frequency, options[:start_time]),
-                         :action => block,
-                         :save => options[:save],
-                         :logger => logger)
+      task = Task.new(:name => key,
+                      :schedule => create_schedule(key, frequency, options[:start_time]),
+                      :action => block,
+                      :save => options[:save],
+                      :logger => logger,
+                      :scheduler => self)
+      @tasks.add_or_update(task)
       logger.info "| #{key} added to Scheduler"
-    end
-
-    def next_task_time
-      tasks.map { |task| task.next_occurrence }.sort.first
-    end
-
-    def running_tasks
-      tasks.select do |task|
-        task.running?
-      end
-    end
-
-    def tasks_at_time(time)
-      tasks.select do |task|
-        task.next_occurrence == time
-      end
     end
 
     def use_saved_schedule_if_rules_match(saved_schedule, new_schedule)
@@ -118,6 +106,18 @@ module Recurrent
         saved_schedule
       else
         new_schedule
+      end
+    end
+
+    def increment_executing_tasks
+      mutex.synchronize do
+        @executing_tasks += 1
+      end
+    end
+
+    def decrement_executing_tasks
+      mutex.synchronize do
+       @executing_tasks -= 1
       end
     end
 

@@ -40,8 +40,8 @@ module Recurrent
 
     def execute
       loop do
-        execution_time = scheduler.next_task_time
-        tasks_to_execute = scheduler.tasks_at_time(execution_time)
+        execution_time = scheduler.tasks.next_execution_time
+        tasks_to_execute = scheduler.tasks.scheduled_to_execute_at(execution_time, :sort_by_frequency => !!Configuration.maximum_concurrent_tasks)
 
         wait_for_running_tasks && break if $exit
 
@@ -80,12 +80,12 @@ module Recurrent
     end
 
     def wait_for_running_tasks_for(seconds)
-      while scheduler.running_tasks.any? do
+      while scheduler.tasks.running.any? do
         logger.info "Killing running tasks in #{seconds.inspect}."
         seconds -= 1
         sleep(1)
         if seconds == 0
-          scheduler.running_tasks.each do |task|
+          scheduler.tasks.running.each do |task|
             logger.info "Killing #{task.name}."
             task.thread = nil unless task.thread.try(:kill).try(:alive?)
           end
@@ -95,7 +95,7 @@ module Recurrent
     end
 
     def wait_for_running_tasks_indefinitely
-      if task = scheduler.running_tasks.first
+      if task = scheduler.tasks.running.first
         logger.info "Waiting for #{task.name} to finish."
         task.thread.try(:join)
         wait_for_running_tasks_indefinitely
