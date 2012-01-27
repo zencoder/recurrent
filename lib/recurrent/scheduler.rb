@@ -95,7 +95,7 @@ module Recurrent
                       :save => options[:save],
                       :logger => logger,
                       :scheduler => self)
-      @tasks.add_or_update_task(task)
+      @tasks.add_or_update(task)
       logger.info "| #{key} added to Scheduler"
     end
 
