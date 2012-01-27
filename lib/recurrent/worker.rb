@@ -80,12 +80,12 @@ module Recurrent
     end
 
     def wait_for_running_tasks_for(seconds)
-      while scheduler.running_tasks.any? do
+      while scheduler.tasks.running.any? do
         logger.info "Killing running tasks in #{seconds.inspect}."
         seconds -= 1
         sleep(1)
         if seconds == 0
-          scheduler.running_tasks.each do |task|
+          scheduler.tasks.running.each do |task|
             logger.info "Killing #{task.name}."
             task.thread = nil unless task.thread.try(:kill).try(:alive?)
           end
