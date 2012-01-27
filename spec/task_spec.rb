@@ -72,13 +72,6 @@ module Recurrent
           Configuration.load_task_return_value = nil
         end
       end
-
-      context "load_task_return_value is not configured" do
-
-      end
-
-
-
     end
 
     describe "#next_occurrence" do
