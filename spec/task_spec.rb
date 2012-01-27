@@ -224,11 +224,15 @@ module Recurrent
     describe "Restricting to a maximum number of concurrent tasks" do
       before(:each) do
         scheduler = Scheduler.new
+        schedule = IceCube::Schedule.new(Time.now.utc.beginning_of_day)
+        schedule.add_recurrence_rule IceCube::Rule.minutely(1)
         @task1 = Task.new(:name => 'task1',
                          :scheduler => scheduler,
+                         :schedule => schedule.clone,
                          :action => lambda { sleep(1)})
         @task2 = Task.new(:name => 'task2',
                          :scheduler => scheduler,
+                         :schedule => schedule.clone,
                          :action => lambda { sleep(1) })
 
         scheduler.tasks.add_or_update(@task1)

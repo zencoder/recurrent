@@ -18,6 +18,13 @@ module Recurrent
       end
     end
 
+    def next_for_execution_at_time(time)
+      @mutex.synchronize do
+        tasks_running_at_time = @tasks.select {|task| task.running? && task.thread['execution_time'] == time }
+        TaskCollection.sort_by_frequency(tasks_running_at_time).first
+      end
+    end
+
     def next_execution_time
       @mutex.synchronize do
         @tasks.map { |task| task.next_occurrence }.sort.first
@@ -40,16 +47,21 @@ module Recurrent
       @mutex.synchronize do
         current_tasks = @tasks.select {|task| task.next_occurrence == time }
         if opts[:sort_by_frequency]
-          current_tasks.sort_by do |task|
-            task.schedule.rrules.sort_by do |rule|
-              rule.frequency_in_seconds
-            end.first.frequency_in_seconds
-          end
+          TaskCollection.sort_by_frequency(current_tasks)
         else
           current_tasks
         end
       end
     end
+
+    def self.sort_by_frequency(task_list)
+      task_list.sort_by do |task|
+        task.schedule.rrules.sort_by do |rule|
+          rule.frequency_in_seconds
+        end.first.frequency_in_seconds
+      end
+    end
+
 
     def method_missing(id, *args, &block)
       @mutex.synchronize do

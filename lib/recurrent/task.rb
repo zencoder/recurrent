@@ -16,7 +16,6 @@ module Recurrent
 
     def execute(execution_time)
       return handle_still_running(execution_time) if running?
-
       @thread = Thread.new do
         Thread.current["execution_time"] = execution_time
         begin
@@ -37,7 +36,7 @@ module Recurrent
     end
 
     def limit_execution_to_max_concurrency
-      if scheduler.increment_executing_tasks <= Configuration.maximum_concurrent_tasks
+      if (scheduler.increment_executing_tasks <= Configuration.maximum_concurrent_tasks) && task_is_next_in_line?
         call_action
         scheduler.decrement_executing_tasks
       else
@@ -45,9 +44,14 @@ module Recurrent
       end
     end
 
+    def task_is_next_in_line?
+      self == scheduler.tasks.next_for_execution_at_time(Thread.current["execution_time"])
+    end
+
     def call_action
       if Configuration.load_task_return_value && action.arity == 1
         previous_value = Configuration.load_task_return_value.call(name)
+
         return_value = action.call(previous_value)
       else
         return_value = action.call
