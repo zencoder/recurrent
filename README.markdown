@@ -121,6 +121,20 @@ How long to wait before killing tasks that are still running.
 
      configure.wait_for_running_tasks_on_exit_for = 10.seconds
 
+###Limiting the number of concurrent tasks
+To limit the number of tasks that run simultaneously:
+
+    configure.maximum_concurrent_tasks = 5
+
+This will run up to the above number of tasks simultaneously, other tasks will wait until a slot opens up before executing. Tasks that run more frequently, e.g. once a minute, will have precedence over tasks that run once an hour or day etc.
+
+####wait\_for\_running\_tasks\_on\_exit\_for
+How long to wait before killing tasks that are still running.
+
+    configure.wait_for_running_tasks_on_exit_for = 10.seconds
+
+
+
 Submitting an Issue
 -------------------
 We use the [GitHub issue tracker](http://github.com/zencoder/recurrent/issues) to track bugs and
