@@ -222,14 +222,15 @@ module Recurrent
         @task1 = Task.new(:name => 'task1',
                          :scheduler => scheduler,
                          :schedule => schedule.clone,
-                         :action => lambda { sleep(1)})
+                         :action => lambda { sleep(1); $tasks_executed += 1 })
         @task2 = Task.new(:name => 'task2',
                          :scheduler => scheduler,
                          :schedule => schedule.clone,
-                         :action => lambda { sleep(1) })
+                         :action => lambda { sleep(1); $tasks_executed += 1 })
 
         scheduler.tasks.add_or_update(@task1)
         scheduler.tasks.add_or_update(@task2)
+        $tasks_executed = 0
       end
 
       describe "when there is no concurrent task limit set" do
@@ -241,10 +242,7 @@ module Recurrent
 
           [@task1, @task2].each {|task| task.thread.join }
 
-          finished_at = Time.now
-          elapsed = finished_at - current_time
-
-          elapsed.round.should == 1.seconds
+          $tasks_executed.should == 2
         end
       end
 
@@ -253,18 +251,16 @@ module Recurrent
           Configuration.maximum_concurrent_tasks = 1
         end
 
-        it "should run only up to the number of tasks specified at once" do
+        it "throw away tasks if there are too many tasks running" do
           current_time = Time.now
+
           [@task1, @task2].each do |task|
             task.execute(current_time)
           end
 
-          [@task1, @task2].each {|task| task.thread.join }
+          [@task1, @task2].each {|task| task.thread.try(:join) }
 
-          finished_at = Time.now
-          elapsed = finished_at - current_time
-
-          elapsed.round.should == 2.seconds
+          $tasks_executed.should == 1
         end
 
         after(:each) do

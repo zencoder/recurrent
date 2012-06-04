@@ -16,47 +16,43 @@ module Recurrent
 
     def execute(execution_time)
       return handle_still_running(execution_time) if running?
+      return if Configuration.maximum_concurrent_tasks.present? && (scheduler.executing_tasks >= Configuration.maximum_concurrent_tasks)
       @thread = Thread.new do
         Thread.current["execution_time"] = execution_time
+        scheduler && scheduler.increment_executing_tasks
         begin
-          if Configuration.maximum_concurrent_tasks.present?
-            limit_execution_to_max_concurrency
-          else
-            call_action
-          end
-        rescue TooManyExecutingTasks
-          scheduler.decrement_executing_tasks
-          sleep(0.1)
-          retry
+          call_action
         rescue => e
           logger.warn("#{name} - #{e.message}")
           logger.warn(e.backtrace)
+        ensure
+          scheduler && scheduler.decrement_executing_tasks
         end
       end
     end
 
-    def limit_execution_to_max_concurrency
-      if (scheduler.increment_executing_tasks <= Configuration.maximum_concurrent_tasks) && task_is_next_in_line?
-        call_action
-        scheduler.decrement_executing_tasks
-      else
-        raise TooManyExecutingTasks
-      end
-    end
-
-    def task_is_next_in_line?
-      self == scheduler.tasks.next_for_execution_at_time(Thread.current["execution_time"])
-    end
-
     def call_action
-      if Configuration.load_task_return_value && action.arity == 1
-        previous_value = Configuration.load_task_return_value.call(name)
+      if Configuration.task_locking
+        Configuration.task_locking.call(name) do
+          if Configuration.load_task_return_value && action.arity == 1
+            previous_value = Configuration.load_task_return_value.call(name)
 
-        return_value = action.call(previous_value)
+            return_value = action.call(previous_value)
+          else
+            return_value = action.call
+          end
+          save_results(return_value) if save?
+        end
       else
-        return_value = action.call
+        if Configuration.load_task_return_value && action.arity == 1
+          previous_value = Configuration.load_task_return_value.call(name)
+
+          return_value = action.call(previous_value)
+        else
+          return_value = action.call
+        end
+        save_results(return_value) if save?
       end
-      save_results(return_value) if save?
     end
 
     def handle_still_running(current_time)
