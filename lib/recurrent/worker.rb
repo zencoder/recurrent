@@ -41,7 +41,7 @@ module Recurrent
     def execute
       loop do
         execution_time = scheduler.tasks.next_execution_time
-        tasks_to_execute = scheduler.tasks.scheduled_to_execute_at(execution_time, :sort_by_frequency => !!Configuration.maximum_concurrent_tasks)
+        tasks_to_execute = scheduler.tasks.scheduled_to_execute_at(execution_time, :sort_by_frequency => !!Configuration.maximum_concurrent_tasks).reverse
 
         wait_for_running_tasks && break if $exit
 
