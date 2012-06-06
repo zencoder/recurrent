@@ -21,7 +21,7 @@ module Recurrent
         Thread.current["execution_time"] = execution_time
         scheduler && scheduler.increment_executing_tasks
         begin
-          call_action
+          call_action(execution_time)
         rescue => e
           logger.warn("#{name} - #{e.message}")
           logger.warn(e.backtrace)
@@ -31,9 +31,9 @@ module Recurrent
       end
     end
 
-    def call_action
+    def call_action(execution_time=nil)
       if Configuration.task_locking
-        Configuration.task_locking.call(name) do
+        lock_established = Configuration.task_locking.call(name) do
           if Configuration.load_task_return_value && action.arity == 1
             previous_value = Configuration.load_task_return_value.call(name)
 
@@ -43,6 +43,7 @@ module Recurrent
           end
           save_results(return_value) if save?
         end
+        logger.info "#{name} - #{execution_time} is locked by another process" unless lock_established
       else
         if Configuration.load_task_return_value && action.arity == 1
           previous_value = Configuration.load_task_return_value.call(name)
