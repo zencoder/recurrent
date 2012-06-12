@@ -94,7 +94,8 @@ module Recurrent
                       :action => block,
                       :save => options[:save],
                       :logger => logger,
-                      :scheduler => self)
+                      :scheduler => self,
+                      :disable_task_locking => options[:disable_task_locking])
       @tasks.add_or_update(task)
       logger.info "| #{key} added to Scheduler"
     end
