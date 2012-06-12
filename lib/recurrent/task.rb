@@ -45,13 +45,7 @@ module Recurrent
           end
           save_results(return_value) if save?
         end
-
-        if lock_established
-          logger.info "#{name} - #{execution_time}: lock established"
-        else
-          logger.info "#{name} - #{execution_time}: locked by another process"
-        end
-
+        logger.info "#{name} - #{execution_time}: locked by another process" unless lock_established
       else
         if Configuration.load_task_return_value && action.arity == 1
           previous_value = Configuration.load_task_return_value.call(name)
