@@ -11,6 +11,7 @@ module Recurrent
       @save = options[:save]
       @logger = options[:logger]
       @scheduler = options[:scheduler]
+      @disable_task_locking = options[:disable_task_locking]
       Configuration.save_task_schedule.call(name, schedule) if Configuration.save_task_schedule
     end
 
@@ -32,7 +33,7 @@ module Recurrent
     end
 
     def call_action(execution_time=nil)
-      if Configuration.task_locking
+      if Configuration.task_locking && !@disable_task_locking
         lock_established = Configuration.task_locking.call(name) do
           if Configuration.load_task_return_value && action.arity == 1
             previous_value = Configuration.load_task_return_value.call(name)
