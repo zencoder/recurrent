@@ -34,7 +34,7 @@ module Recurrent
 
     def call_action(execution_time=nil)
       if Configuration.task_locking && !@disable_task_locking
-        logger.info "#{name} - #{execution_time}: attempting to establish lock"
+        logger.info "#{name} - #{execution_time.to_s(:seconds)}: attempting to establish lock"
         lock_established = Configuration.task_locking.call(name) do
           if Configuration.load_task_return_value && action.arity == 1
             previous_value = Configuration.load_task_return_value.call(name)
@@ -48,7 +48,7 @@ module Recurrent
           # If a task finishes quickly hold the lock for a few seconds to avoid releasing it before other processes try to pick up the task
           sleep(1) until Time.now - execution_time > 5 if execution_time
         end
-        logger.info "#{name} - #{execution_time}: locked by another process" unless lock_established
+        logger.info "#{name} - #{execution_time.to_s(:seconds)}: locked by another process" unless lock_established
       else
         if Configuration.load_task_return_value && action.arity == 1
           previous_value = Configuration.load_task_return_value.call(name)
