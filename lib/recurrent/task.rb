@@ -44,6 +44,9 @@ module Recurrent
             return_value = action.call
           end
           save_results(return_value) if save?
+
+          # If a task finishes quickly hold the lock for a few seconds to avoid releasing it before other processes try to pick up the task
+          sleep(1) until Time.now - execution_time > 5 if execution_time
         end
         logger.info "#{name} - #{execution_time}: locked by another process" unless lock_established
       else
