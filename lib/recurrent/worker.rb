@@ -5,6 +5,9 @@ module Recurrent
 
     def initialize(options={})
       Configuration.setup.call if Configuration.setup
+      Configuration.maximum_concurrent_tasks = options[:maximum_concurrent_tasks]
+      Configuration.pool_size = options[:pool_size]
+      Configuration.locker_pool_size = options[:locker_pool_size]
       file = options[:file]
       @scheduler = Scheduler.new(file)
       if options[:every]
