@@ -4,6 +4,9 @@ module Recurrent
     attr_accessor :scheduler, :logger
 
     def initialize(options={})
+      Configuration.maximum_concurrent_tasks = options[:maximum_concurrent_tasks]
+      Configuration.pool_size = options[:pool_size]
+      Configuration.locker_pool_size = options[:locker_pool_size]
       Configuration.setup.call if Configuration.setup
       file = options[:file]
       @scheduler = Scheduler.new(file)
@@ -41,7 +44,7 @@ module Recurrent
     def execute
       loop do
         execution_time = scheduler.tasks.next_execution_time
-        tasks_to_execute = scheduler.tasks.scheduled_to_execute_at(execution_time, :sort_by_frequency => !!Configuration.maximum_concurrent_tasks)
+        tasks_to_execute = scheduler.tasks.scheduled_to_execute_at(execution_time, :sort_by_frequency => !!Configuration.maximum_concurrent_tasks).reverse
 
         wait_for_running_tasks && break if $exit
 

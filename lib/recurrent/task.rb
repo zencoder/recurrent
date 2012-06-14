@@ -11,52 +11,54 @@ module Recurrent
       @save = options[:save]
       @logger = options[:logger]
       @scheduler = options[:scheduler]
+      @disable_task_locking = options[:disable_task_locking]
       Configuration.save_task_schedule.call(name, schedule) if Configuration.save_task_schedule
     end
 
     def execute(execution_time)
       return handle_still_running(execution_time) if running?
+      return if Configuration.maximum_concurrent_tasks.present? && (scheduler.executing_tasks >= Configuration.maximum_concurrent_tasks)
       @thread = Thread.new do
         Thread.current["execution_time"] = execution_time
+        scheduler && scheduler.increment_executing_tasks
         begin
-          if Configuration.maximum_concurrent_tasks.present?
-            limit_execution_to_max_concurrency
-          else
-            call_action
-          end
-        rescue TooManyExecutingTasks
-          scheduler.decrement_executing_tasks
-          sleep(0.1)
-          retry
+          call_action(execution_time)
         rescue => e
           logger.warn("#{name} - #{e.message}")
           logger.warn(e.backtrace)
+        ensure
+          scheduler && scheduler.decrement_executing_tasks
         end
       end
     end
 
-    def limit_execution_to_max_concurrency
-      if (scheduler.increment_executing_tasks <= Configuration.maximum_concurrent_tasks) && task_is_next_in_line?
-        call_action
-        scheduler.decrement_executing_tasks
+    def call_action(execution_time=nil)
+      if Configuration.task_locking && !@disable_task_locking
+        logger.info "#{name} - #{execution_time.to_s(:seconds)}: attempting to establish lock"
+        lock_established = Configuration.task_locking.call(name) do
+          if Configuration.load_task_return_value && action.arity == 1
+            previous_value = Configuration.load_task_return_value.call(name)
+
+            return_value = action.call(previous_value)
+          else
+            return_value = action.call
+          end
+          save_results(return_value) if save?
+
+          # If a task finishes quickly hold the lock for a few seconds to avoid releasing it before other processes try to pick up the task
+          sleep(1) until Time.now - execution_time > 5 if execution_time
+        end
+        logger.info "#{name} - #{execution_time.to_s(:seconds)}: locked by another process" unless lock_established
       else
-        raise TooManyExecutingTasks
+        if Configuration.load_task_return_value && action.arity == 1
+          previous_value = Configuration.load_task_return_value.call(name)
+
+          return_value = action.call(previous_value)
+        else
+          return_value = action.call
+        end
+        save_results(return_value) if save?
       end
-    end
-
-    def task_is_next_in_line?
-      self == scheduler.tasks.next_for_execution_at_time(Thread.current["execution_time"])
-    end
-
-    def call_action
-      if Configuration.load_task_return_value && action.arity == 1
-        previous_value = Configuration.load_task_return_value.call(name)
-
-        return_value = action.call(previous_value)
-      else
-        return_value = action.call
-      end
-      save_results(return_value) if save?
     end
 
     def handle_still_running(current_time)

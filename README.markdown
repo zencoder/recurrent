@@ -126,7 +126,7 @@ To limit the number of tasks that run simultaneously:
 
     configure.maximum_concurrent_tasks = 5
 
-This will run up to the above number of tasks simultaneously, other tasks will wait until a slot opens up before executing. Tasks that run more frequently, e.g. once a minute, will have precedence over tasks that run once an hour or day etc.
+This will run up to the above number of tasks simultaneously, if there are too many tasks running it will skip any extra tasks for that run. Tasks that run less frequently are prioritized. For example if you can run a maximum of 5 tasks, 4 of which are currently running, and you are now scheduled to run two tasks, one that runs once an hour, and one that runs once a minute, the hourly task will get the slot and the minutely task will not run until its next scheduled run.
 
 
 
