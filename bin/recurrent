@@ -11,6 +11,7 @@ opts = Trollop::options do
   opt :maximum_concurrent_tasks, "Maximum number of concurrent tasks to run", :type => :integer
   opt :pool_size, "Size of database connection pool", :type => :integer
   opt :locker_pool_size, "Size of locker database connection pool (should be >= maximum_concurrent_tasks)", :type => :integer
+  opt :process_name, "Name of the worker process", :type => :string
 end
 
 begin
@@ -18,5 +19,5 @@ begin
 rescue LoadError
   require 'recurrent'
 end
-$0 = "recurrent:worker:started-#{Time.now.to_s(:logging)}"
+$0 = opts[:process_name] || "recurrent:worker:started-#{Time.now.to_s(:logging)}"
 Recurrent::Worker.new(opts).start
