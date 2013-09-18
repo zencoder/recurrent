@@ -201,6 +201,7 @@ module Recurrent
           t = Task.new
           t.thread = Thread.new { sleep 1 }
           t.thread.kill
+          sleep 0.1
           t.running?.should be_false
         end
       end
