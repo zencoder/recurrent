@@ -9,8 +9,6 @@ opts = Trollop::options do
   opt :system, "Command to send to the command line", :type => :string
   opt :name, "Name of the task", :default => 'command_line'
   opt :maximum_concurrent_tasks, "Maximum number of concurrent tasks to run", :type => :integer
-  opt :pool_size, "Size of database connection pool", :type => :integer
-  opt :locker_pool_size, "Size of locker database connection pool (should be >= maximum_concurrent_tasks)", :type => :integer
   opt :process_name, "Name of the worker process", :type => :string
 end
 

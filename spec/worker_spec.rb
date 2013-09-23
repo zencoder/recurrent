@@ -36,7 +36,7 @@ module Recurrent
         waiting_thread = Thread.new { Worker.new.wait_until(Time.local(2011, 7, 26, 11, 40, 00)) }
         waiting_thread.alive?.should be_true
         Timecop.travel(Time.local(2011, 7, 26, 11, 40, 00))
-        sleep(0.5)
+        sleep(0.51)
         waiting_thread.alive?.should be_false
         Timecop.return
       end

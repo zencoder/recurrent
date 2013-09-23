@@ -6,3 +6,5 @@ Gemfile.lock
 pkg/*
 /.idea
 .zenflow-log
+.ruby-version
+.ruby-gemset

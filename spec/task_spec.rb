@@ -37,6 +37,7 @@ module Recurrent
 
       it "sets its execution_time" do
         @task.execute(@current_time)
+        @task.thread.join
         @task.thread['execution_time'].should == @current_time
       end
 
@@ -51,6 +52,7 @@ module Recurrent
           it "calls the action with a nil argument" do
             @task.action.should_receive(:call)
             @task.execute(@current_time)
+            @task.thread.join
           end
         end
 
@@ -62,6 +64,7 @@ module Recurrent
           it "loads the task return value and calls the action with it as an argument" do
             @task.action.should_receive(:call).with("testing")
             @task.execute(@current_time)
+            @task.thread.join
           end
 
           after :each do
@@ -111,6 +114,7 @@ module Recurrent
       context "When no method for handling a still running task is configured" do
         it "just logs that the task is still running" do
           @task.logger.should_receive(:info).with("handle_still_running_test: Execution from #{@executing_task_time.to_s(:seconds)} still running, aborting this execution.")
+          @task.thread.join
           @task.handle_still_running(@current_time)
         end
       end
@@ -168,6 +172,7 @@ module Recurrent
           @task = Task.new :name => 'save_results_test', :logger => Logger.new('some identifier')
           @current_time = Time.now
           @task.thread = Thread.new { Thread.current["execution_time"] = @current_time }
+          @task.thread.join
         end
 
         it "calls the method and logs that the value was saved" do
@@ -201,6 +206,7 @@ module Recurrent
           t = Task.new
           t.thread = Thread.new { sleep 1 }
           t.thread.kill
+          sleep 0.1
           t.running?.should be_false
         end
       end

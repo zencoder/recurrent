@@ -17,12 +17,15 @@ module Recurrent
 
     def execute(execution_time)
       return handle_still_running(execution_time) if running?
-      return if Configuration.maximum_concurrent_tasks.present? && (scheduler.executing_tasks >= Configuration.maximum_concurrent_tasks)
       @thread = Thread.new do
         Thread.current["execution_time"] = execution_time
         scheduler && scheduler.increment_executing_tasks
         begin
-          call_action(execution_time)
+          if Configuration.maximum_concurrent_tasks.present?
+            call_action(execution_time) unless (scheduler.executing_tasks > Configuration.maximum_concurrent_tasks)
+          else
+            call_action(execution_time)
+          end
         rescue => e
           logger.warn("#{name} - #{e.message}")
           logger.warn(e.backtrace)
