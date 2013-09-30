@@ -6,6 +6,7 @@ Gem::Specification.new do |s|
   s.name         = "recurrent"
   s.version      = Recurrent::VERSION
   s.platform     = Gem::Platform::RUBY
+  s.license      = "MIT"
   s.authors      = ["Adam Kittelson"]
   s.email        = ["adam@zencoder.com"]
   s.homepage     = "http://github.com/zencoder/recurrent"
