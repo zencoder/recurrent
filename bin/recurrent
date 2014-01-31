@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+$: << "." unless $:.include?(".")
 require 'rubygems'
 require 'trollop'
 
