@@ -18,12 +18,11 @@ Gem::Specification.new do |s|
   s.add_dependency "i18n"
   s.add_dependency "trollop"
   s.add_development_dependency "rspec"
-  s.add_development_dependency "autotest"
   s.add_development_dependency "timecop"
   s.add_development_dependency "pry"
   s.add_development_dependency "pry-doc"
   s.executables << "recurrent"
   s.files        = `git ls-files`.split("\n")
   s.test_files   = `git ls-files -- {test,spec,features}/*`.split("\n")
-  s.require_path = ["lib"]
+  s.require_path = "lib"
 end
