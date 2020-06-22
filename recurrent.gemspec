@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   s.summary      = "Task scheduler that doesn't need to bootstrap your Rails environment every time it executes a task the way running a rake task via cron does."
   s.description  = "Task scheduler that doesn't need to bootstrap your Rails environment every time it executes a task the way running a rake task via cron does."
 
-  s.add_dependency "ice_cube", "0.6.8"
+  s.add_dependency "ice_cube", "0.16.3"
   s.add_dependency "activesupport"
   s.add_dependency "i18n"
   s.add_dependency "trollop"

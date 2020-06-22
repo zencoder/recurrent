@@ -103,7 +103,7 @@ module Recurrent
     def use_saved_schedule_if_rules_match(saved_schedule, new_schedule)
       if new_schedule.has_same_rules? saved_schedule
         logger.info "| Schedule matches a saved schedule, using saved schedule."
-        saved_schedule.start_date = saved_schedule.next_occurrence
+        saved_schedule.start_time = saved_schedule.next_occurrence
         saved_schedule
       else
         new_schedule

@@ -73,7 +73,7 @@ module Recurrent
 
     def next_occurrence
       occurrence = schedule.next_occurrence
-      schedule.start_date = occurrence
+      schedule.start_time = occurrence
     end
 
     def save?

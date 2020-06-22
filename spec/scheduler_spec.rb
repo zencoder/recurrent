@@ -167,7 +167,7 @@ module Recurrent
           it "should return the saved schedule with its start time updated to be its next_occurrence" do
             saved_schedule = Configuration.load_task_schedule.call(:test)
             created_schedule = @scheduler.create_schedule(:test, 10.seconds)
-            created_schedule.start_date.to_s(:seconds).should == saved_schedule.next_occurrence.to_s(:seconds)
+            created_schedule.start_time.to_s(:seconds).should == saved_schedule.next_occurrence.to_s(:seconds)
           end
         end
 

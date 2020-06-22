@@ -91,9 +91,9 @@ module Recurrent
         end
 
         it "update the start time of the task to the time of this occurrence because IceCube::Schedule#next_occurrence gets progressively slower the farther back the start time is" do
-          @task.schedule.start_date.should == @current_time
+          @task.schedule.start_time.should == @current_time
           @task.next_occurrence.should == 10.seconds.from_now
-          @task.schedule.start_date.should == 10.seconds.from_now
+          @task.schedule.start_time.should == 10.seconds.from_now
         end
 
         after(:each) do
