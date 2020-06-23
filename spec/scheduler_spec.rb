@@ -154,8 +154,7 @@ module Recurrent
           @scheduler = Scheduler.new
           Configuration.load_task_schedule do |name|
             if name == :test
-              current_time = Time.new
-              current_time.change(:sec => 0, :usec => 0)
+              current_time = Time.new.change(:sec => 0, :usec => 0)
               schedule = IceCube::Schedule.new(current_time)
               schedule.add_recurrence_rule IceCube::SecondlyRule.new(10)
               schedule

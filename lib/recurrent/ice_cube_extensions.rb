@@ -31,10 +31,7 @@ module IceCube
     attr_writer :start_time
 
     def has_same_rules?(other_schedule)
-      #self.rrules == other_schedule.rrules //Code used when ice_cube 0.6.8
-      new_schedule = self.rrules.first.instance_variable_get("@validations").reject {|k,v| k == :interval}
-      saved_schedule = other_schedule.rrules.first.instance_variable_get("@validations").reject {|k,v| k == :interval}
-      new_schedule == saved_schedule
+      self.rrules == other_schedule.rrules
     end
   end
 end
