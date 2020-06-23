@@ -30,8 +30,5 @@ module IceCube
   class Schedule
     attr_writer :start_time
 
-    def has_same_rules?(other_schedule)
-      self.rrules == other_schedule.rrules
-    end
   end
 end
